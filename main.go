@@ -11,6 +11,8 @@ import (
 
 	"github.com/usedbytes/mini_mouse/bot/interface/input"
 	"github.com/usedbytes/mini_mouse/bot/base"
+	"github.com/usedbytes/mini_mouse/bot/plan"
+	"github.com/usedbytes/mini_mouse/bot/plan/rc"
 )
 
 type Telem struct {
@@ -54,9 +56,11 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	tick := time.NewTicker(16 * time.Millisecond)
+	planner := plan.NewPlanner()
+	planner.AddTask(rc.TaskName, rc.NewTask(input, platform))
+	planner.SetTask("rc")
 
-	maxSpeed := platform.GetMaxVelocity()
+	tick := time.NewTicker(16 * time.Millisecond)
 
 	for _ = range tick.C {
 		err = platform.Update()
@@ -64,7 +68,6 @@ func main() {
 			log.Println(err.Error())
 		}
 
-		a, b := input.GetSticks()
-		platform.SetVelocity(float64(a) * maxSpeed, float64(b) * maxSpeed)
+		planner.Tick()
 	}
 }
