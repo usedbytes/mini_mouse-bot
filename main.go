@@ -11,13 +11,21 @@ import (
 
 	"github.com/usedbytes/mini_mouse/bot/interface/input"
 	"github.com/usedbytes/mini_mouse/bot/base"
+	"github.com/usedbytes/mini_mouse/bot/model"
 	"github.com/usedbytes/mini_mouse/bot/plan"
 	"github.com/usedbytes/mini_mouse/bot/plan/rc"
+	"github.com/usedbytes/mini_mouse/bot/plan/waypoint"
 )
+
+type Pose struct {
+	X, Y float64
+	Heading float64
+}
 
 type Telem struct {
 	lock sync.Mutex
 	Euler []float64
+	Pose Pose
 }
 
 func (t *Telem) SetEuler(vec []float64) {
@@ -36,10 +44,26 @@ func (t *Telem) GetEuler(ignored bool, vec *[]float64) error {
 	return nil
 }
 
+func (t *Telem) SetPose(x, y, heading float64) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	t.Pose = Pose{X: x, Y: y, Heading: heading}
+}
+
+func (t *Telem) GetPose(ignored bool, pose *Pose) error {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	*pose = t.Pose
+
+	return nil
+}
+
 func main() {
 	log.Println("Mini Mouse")
 
-	input := input.NewCollector()
+	ip := input.NewCollector()
 
 	telem := Telem{Euler: make([]float64, 3)}
 
@@ -55,9 +79,14 @@ func main() {
 	if (err != nil) {
 		log.Fatalf(err.Error())
 	}
+	mod := model.NewModel(platform)
+
+	wpTask := waypoint.NewTask(mod, platform)
+	wpTask.SetWaypoint(model.Coord{ 0, 0 })
 
 	planner := plan.NewPlanner()
-	planner.AddTask(rc.TaskName, rc.NewTask(input, platform))
+	planner.AddTask(waypoint.TaskName, wpTask)
+	planner.AddTask(rc.TaskName, rc.NewTask(ip, platform))
 	planner.SetTask("rc")
 
 	tick := time.NewTicker(16 * time.Millisecond)
@@ -68,6 +97,24 @@ func main() {
 			log.Println(err.Error())
 		}
 
+		pos, angle := mod.GetPose()
+		telem.SetPose(float64(pos.X), float64(pos.Y), float64(angle))
+
+		buttons := ip.Buttons()
+		if buttons[input.Triangle] == input.Pressed {
+			mod.ResetOrientation()
+		}
+
+		if buttons[input.Square] == input.Pressed {
+			log.Println("Square.")
+			planner.SetTask("waypoint")
+		}
+
+		if buttons[input.Circle] == input.Pressed {
+			planner.SetTask("rc")
+		}
+
+		mod.Tick()
 		planner.Tick()
 	}
 }
