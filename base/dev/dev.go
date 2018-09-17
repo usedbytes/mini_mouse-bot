@@ -19,6 +19,7 @@ type Dev struct {
 	cmps map[uint8]Receiver
 	toSend []datalink.Packet
 	minNum int
+	allocNum int
 }
 
 func (d *Dev) receive(p *datalink.Packet) interface{} {
@@ -68,11 +69,12 @@ func (d *Dev) Poll() ([]interface{}, error) {
 	// XXX: try and adjust minNum by heuristics to get the necessary
 	// throughput based on actual utilisation
 	toSend := d.toSend
-	d.toSend = make([]datalink.Packet, 0, d.minNum)
+	if len(toSend) > 0 {
+		d.toSend = make([]datalink.Packet, 0, d.allocNum)
 
-
-	if len(toSend) < d.minNum {
-		toSend = append(toSend, make([]datalink.Packet, d.minNum - len(toSend))...)
+		if len(toSend) < d.minNum {
+			toSend = append(toSend, make([]datalink.Packet, d.minNum - len(toSend))...)
+		}
 	}
 
 	pkts, err := d.transactor.Transact(toSend)
@@ -89,12 +91,14 @@ func (d *Dev) Poll() ([]interface{}, error) {
 }
 
 func NewDev(transactor datalink.Transactor) *Dev {
-	minNum := 4
+	minNum := 0
+	allocNum := 4
 	dev := &Dev{
 		transactor: transactor,
 		cmps: make(map[uint8]Receiver),
-		toSend: make([]datalink.Packet, minNum),
+		toSend: make([]datalink.Packet, allocNum),
 		minNum: minNum,
+		allocNum: allocNum,
 	}
 
 	return dev
