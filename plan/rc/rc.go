@@ -11,12 +11,19 @@ const TaskName = "rc"
 type Task struct {
 	platform *base.Platform
 	input *input.Collector
+
+	prevA, prevB float32
 }
 
 func (t *Task) Tick() {
 	maxSpeed := t.platform.GetMaxVelocity()
 	a, b := t.input.GetSticks()
-	t.platform.SetVelocity(a * maxSpeed, b * maxSpeed)
+
+	if a != t.prevA || b != t.prevB {
+		t.platform.SetVelocity(a * maxSpeed, b * maxSpeed)
+	}
+	t.prevA = a
+	t.prevB = b
 }
 
 func NewTask(ip *input.Collector, pl *base.Platform) *Task {
