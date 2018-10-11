@@ -2,7 +2,6 @@
 package model
 
 import (
-	"log"
 	"math"
 
 	"github.com/usedbytes/mini_mouse/bot/base"
@@ -51,6 +50,7 @@ func (m *Model) ResetOrientation() {
 }
 
 func (m *Model) Tick() {
+	/*
 	wb := m.platform.Wheelbase()
 
 	a, b := m.platform.GetDistance()
@@ -82,14 +82,18 @@ func (m *Model) Tick() {
 	if m.ori > math.Pi || m.ori < -math.Pi {
 		m.ori = float32(math.Atan2(math.Sin(float64(m.ori)), math.Cos(float64(m.ori))))
 	}
-
 	m.prevDist = newDist
+	*/
+
+	m.ori = m.platform.GetRot()
 }
 
 func NewModel(p *base.Platform) *Model {
 	m := &Model{
 		platform: p,
 	}
+
+	m.ResetOrientation()
 
 	return m
 }

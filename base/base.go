@@ -6,6 +6,10 @@ import (
 	"net"
 	"log"
 
+	"periph.io/x/periph/host"
+	"periph.io/x/periph/conn/i2c"
+	"periph.io/x/periph/conn/i2c/i2creg"
+	"github.com/usedbytes/bno055"
 	"github.com/usedbytes/mini_mouse/bot/base/dev"
 	"github.com/usedbytes/mini_mouse/bot/base/motor"
 	"github.com/usedbytes/bot_matrix/datalink/netconn"
@@ -17,6 +21,10 @@ type Platform struct {
 	wheelbase float32
 
 	Motors *motor.Motors
+
+	i2cBus i2c.BusCloser
+	imu *bno055.Dev
+	vec []float64
 }
 
 func (p *Platform) SetVelocity(a, b float32) {
@@ -53,7 +61,24 @@ func (p *Platform) Wheelbase() float32 {
 	return p.wheelbase
 }
 
+func (p *Platform) GetRot() float32 {
+	if p.vec != nil {
+		return float32(p.vec[0])
+	}
+	return 0.0
+}
+
 func NewPlatform(/* Some config */) (*Platform, error) {
+	_, err := host.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	b, err := i2creg.Open("")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	c, err := net.Dial("unix", "/tmp/sock")
 	if err != nil {
 		log.Fatal(err)
@@ -65,8 +90,21 @@ func NewPlatform(/* Some config */) (*Platform, error) {
 		dev: dev,
 		mmPerRev: (30.5 * math.Pi),
 		wheelbase: 76,
+		i2cBus: b,
 	}
+
 	p.Motors = motor.NewMotors(dev)
+
+	imu, err := bno055.NewI2C(b, 0x29)
+	if err != nil {
+		log.Println("Couldn't get BNO055")
+	} else {
+		p.imu = imu
+		err = p.imu.SetUseExternalCrystal(true)
+		if err != nil {
+			log.Println("IMU: SetUseExternalCrystal failed")
+		}
+	}
 
 	return p, nil
 }
@@ -86,6 +124,15 @@ func (p *Platform) Update() error {
 				log.Printf("%v\n", pkt)
 			}
 		}
+	}
+
+	if p.imu != nil {
+		vec, err := p.imu.GetVector(bno055.VECTOR_EULER)
+		if err != nil {
+			log.Println("IMU: GetVector failed", err)
+		}
+
+		p.vec = vec
 	}
 
 	return nil
