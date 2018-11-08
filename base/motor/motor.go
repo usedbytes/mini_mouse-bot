@@ -42,12 +42,12 @@ func rxStepReport(p *datalink.Packet) interface{} {
 	return rep
 }
 
-func (m *Motors) setRadss(id int32, speed int32) {
+func (m *Motors) setRadss(id int32, speed float64) {
 	p := datalink.Packet{ Endpoint: 1 }
 
 	buf := &bytes.Buffer{}
-	binary.Write(buf, binary.LittleEndian, byte(id))
-	binary.Write(buf, binary.LittleEndian, byte(speed))
+	binary.Write(buf, binary.LittleEndian, []byte{byte(id), 0, 0, 0})
+	binary.Write(buf, binary.LittleEndian, int32(speed * 65536.0))
 	p.Data = buf.Bytes()
 
 	m.dev.Queue(&p)
@@ -57,8 +57,8 @@ func (m *Motors) SetRPS(a, b float32) {
 	pa := float64(m.rpsToRadss(a))
 	pb := float64(m.rpsToRadss(b))
 
-	m.setRadss(0, int32(math.Round(-pa)))
-	m.setRadss(1, int32(math.Round(pb)))
+	m.setRadss(0, -pa)
+	m.setRadss(1, pb)
 }
 
 func (m *Motors) GetRPS() (float32, float32) {
