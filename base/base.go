@@ -35,16 +35,44 @@ func (p *Platform) SetVelocity(a, b float32) {
 }
 
 func (p *Platform) SetOmega(w float32) {
-
 	rps := w * (p.wheelbase / 2) / p.mmPerRev
-	log.Printf("SetOmega w: %v, rps: %v\n", w, rps)
 
 	p.Motors.SetRPS(-rps, rps)
+}
+
+func (p *Platform) SetArc(vel, w float32) {
+	deltaV := (w * p.wheelbase) / 2
+
+	aVel := vel + deltaV / 2
+	bVel := vel - deltaV / 2
+
+	red := float32(0.0)
+	if aVel > p.GetMaxVelocity() {
+		red = aVel - p.GetMaxVelocity()
+	} else if aVel < -p.GetMaxVelocity() {
+		red = aVel + p.GetMaxVelocity()
+	} else if bVel > p.GetMaxVelocity() {
+		red = bVel - p.GetMaxVelocity()
+	} else if bVel < -p.GetMaxVelocity() {
+		red = bVel + p.GetMaxVelocity()
+	}
+	aVel -= red
+	bVel -= red
+
+	aRps := aVel / p.mmPerRev
+	bRps := bVel / p.mmPerRev
+
+	p.Motors.SetRPS(aRps, bRps)
 }
 
 func (p *Platform) GetMaxVelocity() float32 {
 	max := p.Motors.GetMaxRPS()
 	return max * p.mmPerRev
+}
+
+func (p *Platform) GetMaxOmega() float32 {
+	deltaV := p.GetMaxVelocity()
+	return deltaV * 4 / p.wheelbase
 }
 
 func (p *Platform) GetVelocity() (float32, float32) {
