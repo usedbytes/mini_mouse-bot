@@ -38,15 +38,19 @@ func (c *Collector) handleEvents(ch <-chan input2.InputEvent) {
 		switch e := ev.(type) {
 		case thumbstick.Event:
 			mag := float32(e.Arg)
-			if (e.Theta > 90) && (e.Theta < 270) {
-				mag = -mag
-			}
 
 			if e.Stick == 0 {
+				if (e.Theta > 90) && (e.Theta < 270) {
+					mag = -mag
+				}
 				c.leftStick = mag
 			} else {
+				if (e.Theta > 180) {
+					mag = -mag
+				}
 				c.rightStick = mag
 			}
+
 		case button.Event:
 			if e.Value == button.Pressed {
 				c.buttons[Button(e.Keycode)] = Pressed

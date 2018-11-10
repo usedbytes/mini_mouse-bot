@@ -17,10 +17,12 @@ type Task struct {
 
 func (t *Task) Tick() {
 	maxSpeed := t.platform.GetMaxVelocity()
+	maxW := t.platform.GetMaxOmega()
 	a, b := t.input.GetSticks()
 
 	if a != t.prevA || b != t.prevB {
-		t.platform.SetVelocity(a * maxSpeed, b * maxSpeed)
+		//t.platform.SetVelocity(a * maxSpeed, b * maxSpeed)
+		t.platform.SetArc(a * maxSpeed, b * maxW)
 	}
 	t.prevA = a
 	t.prevB = b
