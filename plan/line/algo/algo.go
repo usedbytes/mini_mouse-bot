@@ -28,12 +28,20 @@ func findMinMaxRowwise(img *image.Gray) []image.Point {
 	return ret
 }
 
+// TODO: What fudge-factor do we need here?
+const fudge = 80
+
+/* FIXME: Out of sync with expandContrastAndThresh
 func expandContrast(img *image.Gray, minMax []image.Point) {
 	w, h := img.Bounds().Dx(), img.Bounds().Dy()
 	cpp := 1
 
 	for i := 0; i < h; i++ {
-		scale := 255.0 / float32(minMax[i].X - minMax[i].Y)
+		scale := float32(0.0)
+		if minMax[i].X - minMax[i].Y > fudge {
+			scale = 255.0 / float32(minMax[i].X - minMax[i].Y)
+		}
+
 		row := img.Pix[img.Stride * i : img.Stride * i + w]
 		for j := 0; j < w * cpp; j += cpp {
 			newVal := float32(row[j] - uint8(minMax[i].Y)) * scale
@@ -41,16 +49,22 @@ func expandContrast(img *image.Gray, minMax []image.Point) {
 		}
 	}
 }
+*/
 
 func expandContrastAndThresh(img *image.Gray, minMax []image.Point) {
-	w, h := img.Bounds().Dx(), img.Bounds().Dy()
+	w, _ := img.Bounds().Dx(), img.Bounds().Dy()
 	cpp := 1
 
-	for i := 0; i < h; i++ {
-		scale := 255.0 / float32(minMax[i].X - minMax[i].Y)
+	for i, p := range minMax {
+		diff := p.X - p.Y
+		scale := float32(0.0)
+		if p.X - p.Y > fudge {
+			scale = 255.0 / float32(diff)
+		}
+
 		row := img.Pix[img.Stride * i : img.Stride * i + w]
 		for j := 0; j < w * cpp; j += cpp {
-			newVal := float32(row[j] - uint8(minMax[i].Y)) * scale
+			newVal := float32(row[j] - uint8(p.Y)) * scale
 			if newVal > 127.0 {
 				row[j] = 255
 			} else {
