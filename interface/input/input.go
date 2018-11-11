@@ -27,9 +27,11 @@ const (
 	Held
 )
 
+type ButtonState map[Button]State
+
 type Collector struct {
 	leftStick, rightStick float32
-	buttons map[Button]State
+	buttons ButtonState
 	held map[Button]bool
 }
 
@@ -65,16 +67,16 @@ func (c *Collector) GetSticks() (float32, float32) {
 	return c.leftStick, c.rightStick
 }
 
-func (c *Collector) Buttons() map[Button]State {
+func (c *Collector) Buttons() ButtonState {
 	defer func() {
-		c.buttons = make(map[Button]State)
+		c.buttons = make(ButtonState)
 	}()
 	return c.buttons
 }
 
 func NewCollector() *Collector {
 	c := &Collector{
-		buttons: make(map[Button]State),
+		buttons: make(ButtonState),
 	}
 
 	stopChan := make(chan bool)
