@@ -18,6 +18,9 @@ type Task struct {
 
 	lastTime time.Time
 	running bool
+	side float32
+	lost, search int
+	maxSpeed, maxTurn float32
 }
 
 func (t *Task) Enter() {
@@ -49,19 +52,59 @@ func (t *Task) Tick(buttons input.ButtonState) {
 
 	line := algo.FindLine(&frame.Gray)
 
-	for i := frame.Bounds().Dy() - 7; i > 0; i-- {
-		if !math.IsNaN(float64(line[i])) {
-			v := float32(30.0 - math.Abs(float64(line[i])) * 50)
-			w := 10 * line[i]
-			fmt.Printf("Line at %+1.2f. v, w: %+2.2f, %+2.2f\n", line[i], v, w)
-			t.platform.SetArc(v, w)
-			break;
+	h := frame.Bounds().Dy()
+	nearest := h + 1
+	furthest := -1
+
+	for i, v := range line {
+		if math.IsNaN(float64(v)) {
+			continue
+		}
+		if i < nearest {
+			nearest = i
+		}
+		if i > furthest {
+			furthest = i
 		}
 	}
+
+	if (nearest > h || furthest < 0) || (t.lost > 0 && nearest > h / 2) {
+		fmt.Printf("Lost line! prev was %v\n", t.side)
+		t.lost++
+		if t.lost > t.search {
+			t.side = -t.side
+			t.search *= 2
+		}
+		t.platform.SetArc(0, float32(math.Copysign(5.0, float64(t.side))))
+		return
+	} else {
+		t.lost = 0
+		t.search = 60
+	}
+
+	val := float32(0.0)
+	mid := int(math.Ceil(float64(furthest - nearest) / 2))
+	for i := mid; i < furthest; i++ {
+		if !math.IsNaN(float64(line[i])) {
+			val = line[i]
+			break
+		}
+	}
+
+	if val > 0 || val < 0 {
+		t.side = val
+	}
+
+	vel := float32(float64(t.maxSpeed) - math.Abs(float64(val)) * float64(2 * t.maxSpeed))
+	omega := t.maxTurn * val
+	t.platform.SetArc(vel, omega)
 }
 
 func NewTask(pl *base.Platform) *Task {
 	return &Task{
 		platform: pl,
+		search: 60,
+		maxSpeed: 300,
+		maxTurn: 10,
 	}
 }
