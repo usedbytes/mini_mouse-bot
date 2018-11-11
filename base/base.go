@@ -5,14 +5,16 @@ import (
 	"math"
 	"net"
 	"log"
+	"time"
 
 	"periph.io/x/periph/host"
 	"periph.io/x/periph/conn/i2c"
 	"periph.io/x/periph/conn/i2c/i2creg"
 	"github.com/usedbytes/bno055"
+	"github.com/usedbytes/bot_matrix/datalink/netconn"
 	"github.com/usedbytes/mini_mouse/bot/base/dev"
 	"github.com/usedbytes/mini_mouse/bot/base/motor"
-	"github.com/usedbytes/bot_matrix/datalink/netconn"
+	"github.com/usedbytes/picamera"
 )
 
 type Platform struct {
@@ -25,6 +27,10 @@ type Platform struct {
 	i2cBus i2c.BusCloser
 	imu *bno055.Dev
 	vec []float64
+
+	Camera *picamera.Camera
+	frame *picamera.Frame
+	frameTime time.Time
 }
 
 func (p *Platform) SetVelocity(a, b float32) {
@@ -96,6 +102,10 @@ func (p *Platform) GetRot() float32 {
 	return 0.0
 }
 
+func (p *Platform) GetFrame() (*picamera.Frame, time.Time) {
+	return p.frame, p.frameTime
+}
+
 func NewPlatform(/* Some config */) (*Platform, error) {
 	_, err := host.Init()
 	if err != nil {
@@ -123,6 +133,14 @@ func NewPlatform(/* Some config */) (*Platform, error) {
 
 	p.Motors = motor.NewMotors(dev)
 
+	p.Camera = picamera.NewCamera(16, 16, 60)
+	if p.Camera == nil {
+		log.Fatal("Couldn't open camera")
+	}
+	p.Camera.SetTransform(0, true, true)
+	// FIXME: Should be configurable
+	p.Camera.SetCrop(picamera.Rect(0, 0.5, 1.0, 1.0))
+
 	imu, err := bno055.NewI2C(b, 0x29)
 	if err != nil {
 		log.Println("Couldn't get BNO055")
@@ -141,6 +159,17 @@ func (p *Platform) Update() error {
 	pkts, err := p.dev.Poll()
 	if err != nil {
 		return err
+	}
+
+	if p.Camera != nil {
+		frame, _ := p.Camera.GetFrame(0)
+		if frame != nil {
+			if p.frame != nil {
+				p.frame.Release()
+			}
+			p.frame = frame
+			p.frameTime = time.Now()
+		}
 	}
 
 	for _, pkt := range pkts {
