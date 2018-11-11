@@ -138,7 +138,7 @@ func main() {
 		}
 
 		buttons := ip.Buttons()
-		planner.Tick()
+		planner.Tick(buttons)
 
 		if buttons[input.Triangle] == input.Pressed {
 			mod.ResetOrientation()

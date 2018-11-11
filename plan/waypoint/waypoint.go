@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/usedbytes/mini_mouse/bot/base"
+	"github.com/usedbytes/mini_mouse/bot/interface/input"
 	"github.com/usedbytes/mini_mouse/bot/model"
 )
 
@@ -22,7 +23,7 @@ func (t *Task) SetWaypoint(c model.Coord) {
 	t.waypoint = c
 }
 
-func (t *Task) Tick() {
+func (t *Task) Tick(buttons input.ButtonState) {
 	pos, theta := t.model.GetPose()
 
 	dPos := t.waypoint.Sub(pos)

@@ -15,7 +15,7 @@ type Task struct {
 	prevA, prevB float32
 }
 
-func (t *Task) Tick() {
+func (t *Task) Tick(buttons input.ButtonState) {
 	maxSpeed := t.platform.GetMaxVelocity()
 	maxW := t.platform.GetMaxOmega()
 	a, b := t.input.GetSticks()

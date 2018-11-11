@@ -3,10 +3,12 @@ package plan
 
 import (
 	"fmt"
+
+	"github.com/usedbytes/mini_mouse/bot/interface/input"
 )
 
 type Task interface {
-	Tick()
+	Tick(buttons input.ButtonState)
 }
 
 type Planner struct {
@@ -14,14 +16,14 @@ type Planner struct {
 	tasks map[string]Task
 }
 
-func (p *Planner) Tick() {
+func (p *Planner) Tick(buttons input.ButtonState) {
 	// TODO: Do things which are irrespective of task
 
 	if p.current == "" {
 		return
 	}
 
-	p.tasks[p.current].Tick()
+	p.tasks[p.current].Tick(buttons)
 }
 
 func (p *Planner) SetTask(name string) error {

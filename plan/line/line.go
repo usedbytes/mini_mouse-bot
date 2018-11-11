@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/usedbytes/mini_mouse/bot/base"
+	"github.com/usedbytes/mini_mouse/bot/interface/input"
 	"github.com/usedbytes/mini_mouse/bot/plan/line/algo"
 )
 
@@ -18,7 +19,7 @@ type Task struct {
 	lastTime time.Time
 }
 
-func (t *Task) Tick() {
+func (t *Task) Tick(buttons input.ButtonState) {
 	frame, frameTime := t.platform.GetFrame()
 	if frame == nil || frameTime == t.lastTime {
 		return
