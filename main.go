@@ -2,6 +2,7 @@
 package main
 
 import (
+	"image"
 	"log"
 	"net"
 	"net/rpc"
@@ -26,6 +27,7 @@ type Telem struct {
 	lock sync.Mutex
 	Euler []float64
 	Pose Pose
+	Frame image.Gray
 }
 
 func (t *Telem) SetEuler(vec []float64) {
@@ -49,6 +51,24 @@ func (t *Telem) SetPose(x, y, heading float64) {
 	defer t.lock.Unlock()
 
 	t.Pose = Pose{X: x, Y: y, Heading: heading}
+}
+
+func (t *Telem) GetFrame(ignored bool, img *image.Gray) error {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	*img = t.Frame
+
+	return nil
+}
+
+func (t *Telem) SetFrame(img *image.Gray) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	t.Frame = *img
+	t.Frame.Pix = make([]byte, len(img.Pix))
+	copy(t.Frame.Pix, img.Pix)
 }
 
 func (t *Telem) GetPose(ignored bool, pose *Pose) error {
@@ -91,14 +111,26 @@ func main() {
 
 	tick := time.NewTicker(16 * time.Millisecond)
 
+	lastTime := time.Now()
+
+	platform.Camera.Enable()
+	defer platform.Camera.Disable()
+
 	for _ = range tick.C {
 		err = platform.Update()
 		if err != nil {
 			log.Println(err.Error())
 		}
+		mod.Tick()
 
 		pos, angle := mod.GetPose()
 		telem.SetPose(float64(pos.X), float64(pos.Y), float64(angle))
+
+		frame, frameTime := platform.GetFrame()
+		if frame != nil && frameTime != lastTime {
+			telem.SetFrame(&frame.Gray)
+			lastTime = frameTime
+		}
 
 		buttons := ip.Buttons()
 		if buttons[input.Triangle] == input.Pressed {
@@ -114,7 +146,6 @@ func main() {
 			planner.SetTask("rc")
 		}
 
-		mod.Tick()
 		planner.Tick()
 	}
 }
