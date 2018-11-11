@@ -17,6 +17,15 @@ type Task struct {
 	platform *base.Platform
 
 	lastTime time.Time
+	running bool
+}
+
+func (t *Task) Enter() {
+	t.platform.EnableCamera()
+}
+
+func (t *Task) Exit() {
+	t.platform.DisableCamera()
 }
 
 func (t *Task) Tick(buttons input.ButtonState) {
@@ -25,6 +34,17 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		return
 	}
 	t.lastTime = frameTime
+
+	if buttons[input.Cross] == input.Pressed {
+		if t.running {
+			t.platform.SetVelocity(0, 0)
+		}
+		t.running = !t.running
+	}
+
+	if !t.running {
+		return
+	}
 
 	line := algo.FindLine(&frame.Gray)
 

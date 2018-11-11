@@ -118,9 +118,6 @@ func main() {
 
 	lastTime := time.Now()
 
-	platform.Camera.Enable()
-	defer platform.Camera.Disable()
-
 	for _ = range tick.C {
 		err = platform.Update()
 		if err != nil {
