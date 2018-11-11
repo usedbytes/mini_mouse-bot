@@ -11,19 +11,25 @@ type Task interface {
 	Tick(buttons input.ButtonState)
 }
 
+type EnterExitTask interface {
+	Task
+	Enter()
+	Exit()
+}
+
 type Planner struct {
-	current string
+	current Task
 	tasks map[string]Task
 }
 
 func (p *Planner) Tick(buttons input.ButtonState) {
 	// TODO: Do things which are irrespective of task
 
-	if p.current == "" {
+	if p.current == nil {
 		return
 	}
 
-	p.tasks[p.current].Tick(buttons)
+	p.current.Tick(buttons)
 }
 
 func (p *Planner) SetTask(name string) error {
@@ -31,9 +37,18 @@ func (p *Planner) SetTask(name string) error {
 		return fmt.Errorf("Unknown task '%s'", name)
 	}
 
+	exit, ok := p.current.(EnterExitTask)
+	if ok {
+		exit.Exit()
+	}
 	// TODO: Stop current task
 
-	p.current = name
+	p.current = p.tasks[name]
+
+	enter, ok := p.current.(EnterExitTask)
+	if ok {
+		enter.Enter()
+	}
 	return nil
 }
 
