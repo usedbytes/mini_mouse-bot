@@ -15,6 +15,7 @@ import (
 	"github.com/usedbytes/mini_mouse/bot/model"
 	"github.com/usedbytes/mini_mouse/bot/plan"
 	"github.com/usedbytes/mini_mouse/bot/plan/rc"
+	"github.com/usedbytes/mini_mouse/bot/plan/line"
 	"github.com/usedbytes/mini_mouse/bot/plan/waypoint"
 )
 
@@ -104,10 +105,14 @@ func main() {
 	wpTask := waypoint.NewTask(mod, platform)
 	wpTask.SetWaypoint(model.Coord{ 0, 0 })
 
+	lineTask := line.NewTask(platform)
+
 	planner := plan.NewPlanner()
+	planner.AddTask(line.TaskName, lineTask)
 	planner.AddTask(waypoint.TaskName, wpTask)
 	planner.AddTask(rc.TaskName, rc.NewTask(ip, platform))
-	planner.SetTask("rc")
+	planner.SetTask(rc.TaskName)
+
 
 	tick := time.NewTicker(16 * time.Millisecond)
 
@@ -140,6 +145,10 @@ func main() {
 		if buttons[input.Square] == input.Pressed {
 			log.Println("Square.")
 			planner.SetTask("waypoint")
+		}
+
+		if buttons[input.Cross] == input.Pressed {
+			planner.SetTask(line.TaskName)
 		}
 
 		if buttons[input.Circle] == input.Pressed {
