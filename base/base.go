@@ -106,6 +106,18 @@ func (p *Platform) GetFrame() (*picamera.Frame, time.Time) {
 	return p.frame, p.frameTime
 }
 
+func (p *Platform) EnableCamera() {
+	p.Camera.Enable()
+}
+
+func (p *Platform) DisableCamera() {
+	if p.frame != nil {
+		p.frame.Release()
+		p.frame = nil
+	}
+	p.Camera.Disable()
+}
+
 func NewPlatform(/* Some config */) (*Platform, error) {
 	_, err := host.Init()
 	if err != nil {
