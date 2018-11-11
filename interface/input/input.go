@@ -18,6 +18,14 @@ const (
 	Triangle
 	Circle
 	PS
+	Share
+	Options
+	L1
+	L2
+	L3
+	R1
+	R2
+	R3
 )
 
 type State int
@@ -74,6 +82,11 @@ func (c *Collector) Buttons() ButtonState {
 	return c.buttons
 }
 
+type buttonMap struct {
+	scancode uint16
+	button Button
+}
+
 func NewCollector() *Collector {
 	c := &Collector{
 		buttons: make(ButtonState),
@@ -87,36 +100,31 @@ func NewCollector() *Collector {
 			log.Println("Source: ", s)
 			conn := s.NewConnection()
 
-			button.MapButton(conn,
-				&button.Button{
-					Match: input2.EventMatch{evdev.EV_KEY, evdev.BTN_MODE},
-					HoldTime: (time.Millisecond * 3000),
-					Keycode: int(PS),
-				})
-			button.MapButton(conn,
-				&button.Button{
-					Match: input2.EventMatch{evdev.EV_KEY, evdev.BTN_NORTH},
-					HoldTime: (time.Millisecond * 1500),
-					Keycode: int(Triangle),
-				})
-			button.MapButton(conn,
-				&button.Button{
-					Match: input2.EventMatch{evdev.EV_KEY, evdev.BTN_EAST},
-					HoldTime: (time.Millisecond * 1500),
-					Keycode: int(Circle),
-				})
-			button.MapButton(conn,
-				&button.Button{
-					Match: input2.EventMatch{evdev.EV_KEY, evdev.BTN_SOUTH},
-					HoldTime: (time.Millisecond * 1500),
-					Keycode: int(Cross),
-				})
-			button.MapButton(conn,
-				&button.Button{
-					Match: input2.EventMatch{evdev.EV_KEY, evdev.BTN_WEST},
-					HoldTime: (time.Millisecond * 1500),
-					Keycode: int(Square),
-				})
+			btnMap := []buttonMap{
+				{ evdev.BTN_MODE, PS },
+				{ evdev.BTN_NORTH, Triangle },
+				{ evdev.BTN_EAST, Circle },
+				{ evdev.BTN_SOUTH, Cross },
+				{ evdev.BTN_WEST, Square },
+				{ evdev.BTN_SELECT, Share },
+				{ evdev.BTN_START, Options },
+				{ evdev.BTN_TL, L1 },
+				{ evdev.BTN_TL2, L2 },
+				{ evdev.BTN_THUMBL, L3 },
+				{ evdev.BTN_TR, R1 },
+				{ evdev.BTN_TR2, R2 },
+				{ evdev.BTN_THUMBR, R3 },
+			}
+
+			for _, b := range btnMap {
+				button.MapButton(conn,
+					&button.Button{
+						Match: input2.EventMatch{evdev.EV_KEY, b.scancode},
+						HoldTime: (time.Millisecond * 1500),
+						Keycode: int(b.button),
+					})
+			}
+
 			thumbstick.MapThumbstick(conn,
 				&thumbstick.Thumbstick{
 					X: thumbstick.Axis{ Code: evdev.ABS_X },
