@@ -25,6 +25,7 @@ func (t *Task) Enter() {
 }
 
 func (t *Task) Exit() {
+	t.platform.SetVelocity(0, 0)
 	t.platform.DisableCamera()
 }
 
