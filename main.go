@@ -141,6 +141,14 @@ func main() {
 			mod.ResetOrientation()
 		}
 
+		if buttons[input.Share] == input.Pressed {
+			if platform.CameraEnabled() {
+				platform.DisableCamera()
+			} else {
+				platform.EnableCamera()
+			}
+		}
+
 		if buttons[input.Square] == input.Pressed {
 			log.Println("Square.")
 			planner.SetTask("waypoint")

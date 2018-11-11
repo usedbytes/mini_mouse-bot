@@ -118,6 +118,10 @@ func (p *Platform) DisableCamera() {
 	p.Camera.Disable()
 }
 
+func (p *Platform) CameraEnabled() bool {
+	return p.Camera.Enabled()
+}
+
 func NewPlatform(/* Some config */) (*Platform, error) {
 	_, err := host.Init()
 	if err != nil {
