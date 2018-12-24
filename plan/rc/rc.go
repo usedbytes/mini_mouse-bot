@@ -15,6 +15,14 @@ type Task struct {
 	prevA, prevB float32
 }
 
+func (t *Task) Enter() {
+	t.platform.SetVelocity(0, 0)
+}
+
+func (t *Task) Exit() {
+	t.platform.SetVelocity(0, 0)
+}
+
 func (t *Task) Tick(buttons input.ButtonState) {
 	maxSpeed := t.platform.GetMaxVelocity()
 	maxW := t.platform.GetMaxOmega()
