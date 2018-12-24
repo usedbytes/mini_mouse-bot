@@ -61,6 +61,10 @@ func (p *Planner) AddTask(name string, task Task) error {
 	return nil
 }
 
+func (p *Planner) CurrentTask() Task {
+	return p.current
+}
+
 func NewPlanner() *Planner {
 	return &Planner{
 		tasks: make(map[string]Task),
