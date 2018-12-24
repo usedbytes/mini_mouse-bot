@@ -95,9 +95,13 @@ func (p *Platform) Wheelbase() float32 {
 	return p.wheelbase
 }
 
+func deg2rad(deg float32) float32 {
+	return deg * math.Pi / 180.0
+}
+
 func (p *Platform) GetRot() float32 {
 	if p.vec != nil {
-		return float32(p.vec[0])
+		return deg2rad(float32(p.vec[0]))
 	}
 	return 0.0
 }

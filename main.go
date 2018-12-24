@@ -4,6 +4,7 @@ package main
 import (
 	"image"
 	"log"
+	"math"
 	"net"
 	"net/rpc"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"github.com/usedbytes/mini_mouse/bot/plan/rc"
 	"github.com/usedbytes/mini_mouse/bot/plan/line"
 	"github.com/usedbytes/mini_mouse/bot/plan/waypoint"
+	"github.com/usedbytes/mini_mouse/bot/plan/heading"
 )
 
 type Pose struct {
@@ -105,11 +107,15 @@ func main() {
 	wpTask := waypoint.NewTask(mod, platform)
 	wpTask.SetWaypoint(model.Coord{ 0, 0 })
 
+	headingTask := heading.NewTask(mod, platform)
+	headingTask.SetHeading(0.0)
+
 	lineTask := line.NewTask(platform)
 
 	planner := plan.NewPlanner()
 	planner.AddTask(line.TaskName, lineTask)
 	planner.AddTask(waypoint.TaskName, wpTask)
+	planner.AddTask(heading.TaskName, headingTask)
 	planner.AddTask(rc.TaskName, rc.NewTask(ip, platform))
 	planner.SetTask(rc.TaskName)
 
@@ -117,6 +123,8 @@ func main() {
 	tick := time.NewTicker(16 * time.Millisecond)
 
 	lastTime := time.Now()
+	tmpTime := time.Now()
+	dir := float32(0.0)
 
 	for _ = range tick.C {
 		err = platform.Update()
@@ -150,8 +158,17 @@ func main() {
 		}
 
 		if buttons[input.Square] == input.Pressed {
+			planner.SetTask(heading.TaskName)
 			log.Println("Square.")
-			planner.SetTask("waypoint")
+			dir = 0.0
+			headingTask.DriveHeading(200, dir)
+			tmpTime = time.Now()
+		}
+
+		if planner.CurrentTask() == headingTask && time.Since(tmpTime) >= 4 * time.Second {
+			dir += math.Pi / 2
+			headingTask.DriveHeading(200, dir)
+			tmpTime = time.Now()
 		}
 
 		if buttons[input.Cross] == input.Pressed {
@@ -160,6 +177,18 @@ func main() {
 
 		if buttons[input.Circle] == input.Pressed {
 			planner.SetTask("rc")
+		}
+
+		if buttons[input.L1] == input.Pressed {
+			log.Println("L1.")
+			headingTask.SetHeading(-math.Pi / 2)
+			planner.SetTask(heading.TaskName)
+		}
+
+		if buttons[input.R1] == input.Pressed {
+			log.Println("R1.")
+			headingTask.SetHeading(math.Pi / 2)
+			planner.SetTask(heading.TaskName)
 		}
 	}
 }

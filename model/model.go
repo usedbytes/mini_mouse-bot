@@ -24,6 +24,7 @@ type Model struct {
 
 	pos Coord
 	ori float32
+	zeroOri float32
 
 	prevDist Coord
 }
@@ -46,6 +47,7 @@ func cos32(x float32) float32 {
 
 func (m *Model) ResetOrientation() {
 	m.pos = Coord{ 0.0, 0.0 }
+	m.zeroOri = m.platform.GetRot()
 	m.ori = 0.0
 }
 
@@ -85,7 +87,10 @@ func (m *Model) Tick() {
 	m.prevDist = newDist
 	*/
 
-	m.ori = m.platform.GetRot()
+	m.ori = m.platform.GetRot() - m.zeroOri
+	if m.ori > math.Pi || m.ori < -math.Pi {
+		m.ori = float32(math.Atan2(math.Sin(float64(m.ori)), math.Cos(float64(m.ori))))
+	}
 }
 
 func NewModel(p *base.Platform) *Model {
