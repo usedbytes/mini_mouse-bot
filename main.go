@@ -19,6 +19,7 @@ import (
 	"github.com/usedbytes/mini_mouse/bot/plan/line"
 	"github.com/usedbytes/mini_mouse/bot/plan/waypoint"
 	"github.com/usedbytes/mini_mouse/bot/plan/heading"
+	"github.com/usedbytes/picamera"
 )
 
 type Pose struct {
@@ -138,7 +139,8 @@ func main() {
 
 		frame, frameTime := platform.GetFrame()
 		if frame != nil && frameTime != lastTime {
-			telem.SetFrame(&frame.Gray)
+			grayFrame := frame.(*picamera.GrayFrame)
+			telem.SetFrame(&grayFrame.Gray)
 			lastTime = frameTime
 		}
 

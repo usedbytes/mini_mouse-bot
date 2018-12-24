@@ -29,7 +29,7 @@ type Platform struct {
 	vec []float64
 
 	Camera *picamera.Camera
-	frame *picamera.Frame
+	frame picamera.Frame
 	frameTime time.Time
 }
 
@@ -106,7 +106,7 @@ func (p *Platform) GetRot() float32 {
 	return 0.0
 }
 
-func (p *Platform) GetFrame() (*picamera.Frame, time.Time) {
+func (p *Platform) GetFrame() (picamera.Frame, time.Time) {
 	return p.frame, p.frameTime
 }
 

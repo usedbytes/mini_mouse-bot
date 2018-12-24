@@ -9,6 +9,7 @@ import (
 	"github.com/usedbytes/mini_mouse/bot/base"
 	"github.com/usedbytes/mini_mouse/bot/interface/input"
 	"github.com/usedbytes/mini_mouse/bot/plan/line/algo"
+	"github.com/usedbytes/picamera"
 )
 
 const TaskName = "line"
@@ -50,7 +51,8 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		return
 	}
 
-	line := algo.FindLine(&frame.Gray)
+	grayFrame := frame.(*picamera.GrayFrame)
+	line := algo.FindLine(&grayFrame.Gray)
 
 	h := frame.Bounds().Dy()
 	nearest := h + 1
