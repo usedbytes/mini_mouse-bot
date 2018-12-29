@@ -81,6 +81,23 @@ func (t *Telem) SetFrame(img image.Image) {
 			Rect: v.Rect,
 			Pix: pix,
 		}
+	case *image.YCbCr:
+	case *picamera.YCbCrFrame:
+		y := make([]byte, len(v.Y))
+		copy(y, v.Y)
+		cb := make([]byte, len(v.Cb))
+		copy(cb, v.Cb)
+		cr := make([]byte, len(v.Cr))
+		copy(cr, v.Cr)
+		t.Frame = &image.YCbCr{
+			Y: y,
+			Cb: cb,
+			Cr: cr,
+			YStride: v.YStride,
+			CStride: v.CStride,
+			SubsampleRatio: v.SubsampleRatio,
+			Rect: v.Rect,
+		}
 	case *image.NRGBA:
 	case *picamera.RGBFrame:
 		pix := make([]byte, len(v.Pix))
@@ -108,6 +125,7 @@ func (t *Telem) GetPose(ignored bool, pose *Pose) error {
 func init() {
 	gob.Register(&image.NRGBA{})
 	gob.Register(&image.Gray{})
+	gob.Register(&image.YCbCr{})
 }
 
 func main() {

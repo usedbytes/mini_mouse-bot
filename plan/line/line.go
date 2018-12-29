@@ -27,7 +27,7 @@ type Task struct {
 func (t *Task) Enter() {
 	t.platform.DisableCamera()
 	t.platform.SetCameraCrop(picamera.Rect(0.0, 0.5, 1.0, 1.0))
-	t.platform.SetCameraFormat(picamera.FORMAT_I420)
+	t.platform.SetCameraFormat(picamera.FORMAT_YV12)
 	t.platform.Camera.SetOutSize(16, 16)
 	t.platform.EnableCamera()
 }
