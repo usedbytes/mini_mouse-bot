@@ -106,6 +106,14 @@ func (p *Platform) GetRot() float32 {
 	return 0.0
 }
 
+func (p *Platform) SetCameraFormat(format picamera.Format) {
+	p.Camera.SetFormat(format)
+}
+
+func (p *Platform) SetCameraCrop(crop picamera.Rectangle) {
+	p.Camera.SetCrop(crop)
+}
+
 func (p *Platform) GetFrame() (picamera.Frame, time.Time) {
 	return p.frame, p.frameTime
 }

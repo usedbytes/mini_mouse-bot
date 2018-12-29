@@ -2,6 +2,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"image"
 	"log"
 	"math"
@@ -31,7 +32,7 @@ type Telem struct {
 	lock sync.Mutex
 	Euler []float64
 	Pose Pose
-	Frame image.Gray
+	Frame image.Image
 }
 
 func (t *Telem) SetEuler(vec []float64) {
@@ -57,7 +58,7 @@ func (t *Telem) SetPose(x, y, heading float64) {
 	t.Pose = Pose{X: x, Y: y, Heading: heading}
 }
 
-func (t *Telem) GetFrame(ignored bool, img *image.Gray) error {
+func (t *Telem) GetFrame(ignored bool, img *image.Image) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -66,13 +67,33 @@ func (t *Telem) GetFrame(ignored bool, img *image.Gray) error {
 	return nil
 }
 
-func (t *Telem) SetFrame(img *image.Gray) {
+func (t *Telem) SetFrame(img image.Image) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
-	t.Frame = *img
-	t.Frame.Pix = make([]byte, len(img.Pix))
-	copy(t.Frame.Pix, img.Pix)
+	switch v := img.(type) {
+	case *image.Gray:
+	case *picamera.GrayFrame:
+		pix := make([]byte, len(v.Pix))
+		copy(pix, v.Pix)
+		t.Frame = &image.Gray{
+			Stride: v.Stride,
+			Rect: v.Rect,
+			Pix: pix,
+		}
+	case *image.NRGBA:
+	case *picamera.RGBFrame:
+		pix := make([]byte, len(v.Pix))
+		copy(pix, v.Pix)
+		t.Frame = &image.NRGBA{
+			Stride: v.Stride,
+			Rect: v.Rect,
+			Pix: pix,
+		}
+	default:
+		log.Printf("%+v\n", v)
+		panic("bad image type")
+	}
 }
 
 func (t *Telem) GetPose(ignored bool, pose *Pose) error {
@@ -82,6 +103,11 @@ func (t *Telem) GetPose(ignored bool, pose *Pose) error {
 	*pose = t.Pose
 
 	return nil
+}
+
+func init() {
+	gob.Register(&image.NRGBA{})
+	gob.Register(&image.Gray{})
 }
 
 func main() {
@@ -139,8 +165,7 @@ func main() {
 
 		frame, frameTime := platform.GetFrame()
 		if frame != nil && frameTime != lastTime {
-			grayFrame := frame.(*picamera.GrayFrame)
-			telem.SetFrame(&grayFrame.Gray)
+			telem.SetFrame(frame)
 			lastTime = frameTime
 		}
 
@@ -155,6 +180,9 @@ func main() {
 			if platform.CameraEnabled() {
 				platform.DisableCamera()
 			} else {
+				platform.SetCameraFormat(picamera.FORMAT_RGBA)
+				platform.Camera.SetCrop(picamera.Rect(0.0, 0.0, 1.0, 1.0))
+				platform.Camera.SetOutSize(160, 160)
 				platform.EnableCamera()
 			}
 		}
