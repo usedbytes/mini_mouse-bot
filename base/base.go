@@ -161,7 +161,7 @@ func NewPlatform(/* Some config */) (*Platform, error) {
 
 	p.Motors = motor.NewMotors(dev)
 
-	p.Camera = picamera.NewCamera(16, 16, 60)
+	p.Camera = picamera.NewCamera(16, 16, 30)
 	if p.Camera == nil {
 		log.Fatal("Couldn't open camera")
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/usedbytes/mini_mouse/bot/plan/line"
 	"github.com/usedbytes/mini_mouse/bot/plan/waypoint"
 	"github.com/usedbytes/mini_mouse/bot/plan/heading"
+	"github.com/usedbytes/mini_mouse/bot/plan/bounce"
 	"github.com/usedbytes/picamera"
 )
 
@@ -155,12 +156,15 @@ func main() {
 	headingTask := heading.NewTask(mod, platform)
 	headingTask.SetHeading(0.0)
 
+	bounceTask := bounce.NewTask(mod, platform)
+
 	lineTask := line.NewTask(platform)
 
 	planner := plan.NewPlanner()
 	planner.AddTask(line.TaskName, lineTask)
 	planner.AddTask(waypoint.TaskName, wpTask)
 	planner.AddTask(heading.TaskName, headingTask)
+	planner.AddTask(bounce.TaskName, bounceTask)
 	planner.AddTask(rc.TaskName, rc.NewTask(ip, platform))
 	planner.SetTask(rc.TaskName)
 
@@ -168,8 +172,6 @@ func main() {
 	tick := time.NewTicker(16 * time.Millisecond)
 
 	lastTime := time.Now()
-	tmpTime := time.Now()
-	dir := float32(0.0)
 
 	for _ = range tick.C {
 		err = platform.Update()
@@ -198,7 +200,7 @@ func main() {
 			if platform.CameraEnabled() {
 				platform.DisableCamera()
 			} else {
-				platform.SetCameraFormat(picamera.FORMAT_RGBA)
+				platform.SetCameraFormat(picamera.FORMAT_I420)
 				platform.Camera.SetCrop(picamera.Rect(0.0, 0.0, 1.0, 1.0))
 				platform.Camera.SetOutSize(160, 160)
 				platform.EnableCamera()
@@ -206,18 +208,24 @@ func main() {
 		}
 
 		if buttons[input.Square] == input.Pressed {
+			mod.ResetOrientation()
+			planner.SetTask(bounce.TaskName)
+			/*
 			planner.SetTask(heading.TaskName)
 			log.Println("Square.")
 			dir = 0.0
 			headingTask.DriveHeading(200, dir)
 			tmpTime = time.Now()
+			*/
 		}
 
+		/*
 		if planner.CurrentTask() == headingTask && time.Since(tmpTime) >= 4 * time.Second {
 			dir += math.Pi / 2
 			headingTask.DriveHeading(200, dir)
 			tmpTime = time.Now()
 		}
+		*/
 
 		if buttons[input.Cross] == input.Pressed {
 			planner.SetTask(line.TaskName)

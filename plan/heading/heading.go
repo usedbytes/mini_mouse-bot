@@ -16,6 +16,7 @@ type Task struct {
 	model *model.Model
 
 	speed, heading float32
+	OnCourse bool
 }
 
 func normalise(rads float32) float32 {
@@ -27,11 +28,13 @@ func normalise(rads float32) float32 {
 }
 
 func (t *Task) SetHeading(heading float32) {
+	t.OnCourse = false
 	t.heading = heading
 	t.speed = 0
 }
 
 func (t *Task) DriveHeading(speed, heading float32) {
+	t.OnCourse = false
 	t.heading = heading
 	t.speed = speed
 }
@@ -48,6 +51,7 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	val := float64(dTheta) - math.Copysign(e, dTheta)
 	if math.Signbit(val) != math.Signbit(dTheta) {
 		val = 0
+		t.OnCourse = true
 	}
 	val = val / (math.Pi - e)
 
