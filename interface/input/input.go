@@ -1,6 +1,7 @@
 package input
 
 import (
+	"image/color"
 	"log"
 	"time"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/usedbytes/input2/button"
 	"github.com/usedbytes/input2/gamepad/thumbstick"
 	"github.com/usedbytes/input2/factory"
+
+	"github.com/usedbytes/linux-led"
 )
 
 type Button int
@@ -99,6 +102,12 @@ func NewCollector() *Collector {
 		for s := range sources {
 			log.Println("Source: ", s)
 			conn := s.NewConnection()
+
+			rgbled, ok := s.(led.RGBLED)
+			if ok {
+				rgbled.SetColor(color.NRGBA{0x00, 0xff, 0x00, 0xff})
+				rgbled.SetTrigger(led.TriggerHeartbeat)
+			}
 
 			btnMap := []buttonMap{
 				{ evdev.BTN_MODE, PS },
