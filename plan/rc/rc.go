@@ -13,6 +13,7 @@ type Task struct {
 	input *input.Collector
 
 	prevA, prevB float32
+	reverse bool
 }
 
 func (t *Task) Enter() {
@@ -30,10 +31,19 @@ func (t *Task) Tick(buttons input.ButtonState) {
 
 	if a != t.prevA || b != t.prevB {
 		//t.platform.SetVelocity(a * maxSpeed, b * maxSpeed)
-		t.platform.SetArc(a * maxSpeed, b * maxW)
+		speed, w := a * maxSpeed, b * maxW
+		if t.reverse {
+			speed = -speed
+		}
+		t.platform.SetArc(speed, w)
 	}
 	t.prevA = a
 	t.prevB = b
+
+	if buttons[input.Triangle] == input.Pressed {
+		t.reverse = !t.reverse
+		buttons[input.Triangle] = input.None
+	}
 }
 
 func NewTask(ip *input.Collector, pl *base.Platform) *Task {
