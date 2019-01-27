@@ -22,12 +22,20 @@ import (
 	"github.com/usedbytes/picamera"
 )
 
+type Boost int
+const (
+	BoostNone Boost = iota
+	BoostSlow
+	BoostFast
+)
+
 type Platform struct {
 	dev *dev.Dev
 	mmPerRev float32
 	wheelbase float32
 
 	Motors *motor.Motors
+	boost Boost
 
 	reconTime time.Duration
 
@@ -77,6 +85,10 @@ func (p *Platform) SetOmega(w float32) {
 	p.Motors.SetRPS(-rps, rps)
 }
 
+func (p *Platform) SetBoost(b Boost) {
+	p.boost = b
+}
+
 func (p *Platform) SetArc(vel, w float32) {
 	deltaV := (w * p.wheelbase) / 2
 
@@ -104,6 +116,13 @@ func (p *Platform) SetArc(vel, w float32) {
 
 func (p *Platform) GetMaxVelocity() float32 {
 	max := p.Motors.GetMaxRPS()
+
+	if p.boost == BoostSlow {
+		max *= 0.5
+	} else if p.boost == BoostFast {
+		max *= 2
+	}
+
 	return max * p.mmPerRev
 }
 

@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"image"
 	"log"
-	"math"
 	"net"
 	"net/rpc"
 	"net/http"
@@ -232,18 +231,6 @@ func main() {
 
 		if buttons[input.Circle] == input.Pressed {
 			planner.SetTask("rc")
-		}
-
-		if buttons[input.L1] == input.Pressed {
-			log.Println("L1.")
-			headingTask.SetHeading(-math.Pi / 2)
-			planner.SetTask(heading.TaskName)
-		}
-
-		if buttons[input.R1] == input.Pressed {
-			log.Println("R1.")
-			headingTask.SetHeading(math.Pi / 2)
-			planner.SetTask(heading.TaskName)
 		}
 	}
 }

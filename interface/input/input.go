@@ -40,6 +40,7 @@ type State int
 const (
 	None State = iota
 	Pressed
+	LongPress
 	Held
 )
 
@@ -74,7 +75,11 @@ func (c *Collector) handleEvents(ch <-chan input2.InputEvent) {
 			if e.Value == button.Pressed {
 				c.buttons[Button(e.Keycode)] = Pressed
 			} else if e.Value == button.Held {
+				c.buttons[Button(e.Keycode)] = LongPress
+			} else if e.Value == button.Down {
 				c.buttons[Button(e.Keycode)] = Held
+			} else if e.Value == button.Up {
+				c.buttons[Button(e.Keycode)] = None
 			}
 		case trigger.Event:
 			if e.Code == trigger.Left {
@@ -96,7 +101,16 @@ func (c *Collector) GetTriggers() (float32, float32) {
 
 func (c *Collector) Buttons() ButtonState {
 	defer func() {
-		c.buttons = make(ButtonState)
+		buttons := make(ButtonState)
+		for k, v := range c.buttons {
+			if v == Held {
+				buttons[k] = v
+			}
+			if v == LongPress {
+				buttons[k] = Held
+			}
+		}
+		c.buttons = buttons
 	}()
 	return c.buttons
 }

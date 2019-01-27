@@ -15,6 +15,7 @@ type Task struct {
 	prevA, prevB float32
 	prevL2, prevR2 float32
 	reverse bool
+	boost base.Boost
 }
 
 func (t *Task) Enter() {
@@ -27,14 +28,31 @@ func (t *Task) Exit() {
 	t.platform.SetVelocity(0, 0)
 	t.platform.SetServos(0.0, 0.0)
 	t.platform.EnableServos(false, false)
+
+	t.platform.SetBoost(base.BoostNone)
 }
 
 func (t *Task) Tick(buttons input.ButtonState) {
+	boost := base.BoostNone
+	if buttons[input.L1] == input.Held || buttons[input.L1] == input.LongPress {
+		boost = base.BoostSlow
+	} else if buttons[input.R1] == input.Held || buttons[input.R1] == input.LongPress {
+		boost = base.BoostFast
+	}
+
+	if boost != t.boost {
+		t.platform.SetBoost(boost)
+	}
+
 	maxSpeed := t.platform.GetMaxVelocity()
+
 	maxW := t.platform.GetMaxOmega()
 	a, b := t.input.GetSticks()
 
-	if a != t.prevA || b != t.prevB {
+	update := a != t.prevA || b != t.prevB || boost != t.boost
+	t.boost = boost
+
+	if update {
 		//t.platform.SetVelocity(a * maxSpeed, b * maxSpeed)
 		speed, w := a * maxSpeed, b * maxW
 		if t.reverse {
