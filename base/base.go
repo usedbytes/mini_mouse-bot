@@ -203,6 +203,7 @@ func NewPlatform(/* Some config */) (*Platform, error) {
 		}
 
 		p.servos = servos
+		p.servos.SetTimeout(time.Second * 10)
 		p.servos.SetPos(0.0, 0.0)
 		p.servos.Enable(true, true)
 

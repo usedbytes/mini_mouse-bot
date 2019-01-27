@@ -2,6 +2,7 @@ package servo
 
 import (
 	"fmt"
+	"time"
 
 	"periph.io/x/periph/conn"
 	"periph.io/x/periph/conn/i2c"
@@ -22,6 +23,16 @@ const (
 	SERVO_REG_SERVO_B_MAX = 6
 )
 
+type Dev struct {
+	d    conn.Conn
+	name string
+
+	val byte
+
+	timer *time.Timer
+	timeout time.Duration
+}
+
 func NewI2C(b i2c.Bus, addr uint8) (*Dev, error) {
 	d := &Dev{d: &i2c.Dev{Bus: b, Addr: uint16(addr)}, name: "Servo", }
 
@@ -36,6 +47,25 @@ func toPos(x float32) byte {
 	}
 
 	return byte(255.0 * x)
+}
+
+func (d *Dev) resetTimeout() {
+	if d.timer != nil {
+		if !d.timer.Stop() {
+			d.timer = nil
+			// Re-enable
+			d.writeReg(0, []byte{d.val})
+		}
+	}
+
+	if d.timeout != 0 {
+		d.timer = time.AfterFunc(d.timeout, func() { d.Halt() })
+	}
+}
+
+func (d *Dev) SetTimeout(to time.Duration) {
+	d.timeout = to
+	d.resetTimeout()
 }
 
 func (d *Dev) Enable(a, b bool) error {
@@ -58,10 +88,15 @@ func (d *Dev) Enable(a, b bool) error {
 		val[0] |= (1 << 2);
 	}
 
+	d.val = val[0]
+	d.resetTimeout()
+
 	return d.writeReg(0, val)
 }
 
 func (d *Dev) SetPos(a, b float32) error {
+	d.resetTimeout()
+
 	return d.writeReg(1, []byte{toPos(a), toPos(b)})
 }
 
@@ -70,6 +105,8 @@ func (d *Dev) SetSingle(servo Id, pos float32) error {
 	if servo == ServoB {
 		addr = 2
 	}
+
+	d.resetTimeout()
 
 	return d.writeReg(addr, []byte{toPos(pos)})
 }
@@ -92,17 +129,13 @@ func (d *Dev) Dump(reg, num uint8) []byte {
 	return data
 }
 
-type Dev struct {
-	d    conn.Conn
-	name string
-}
-
 func (d *Dev) String() string {
 	return fmt.Sprintf("%s{%s}", d.name, d.d)
 }
 
 func (d *Dev) Halt() error {
-	return d.Enable(false, false)
+	// Don't use Enable() so we can bypass the timeout logic
+	return d.writeReg(0, []byte{0})
 }
 
 func (d *Dev) readReg(reg uint8, data []byte) error {
