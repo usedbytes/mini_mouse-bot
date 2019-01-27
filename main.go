@@ -132,8 +132,6 @@ func init() {
 func main() {
 	log.Println("Mini Mouse")
 
-	ip := input.NewCollector()
-
 	telem := Telem{Euler: make([]float64, 3)}
 
 	rpc.Register(&telem)
@@ -148,6 +146,7 @@ func main() {
 	if (err != nil) {
 		log.Fatalf(err.Error())
 	}
+	ip := input.NewCollector(platform)
 	mod := model.NewModel(platform)
 
 	wpTask := waypoint.NewTask(mod, platform)

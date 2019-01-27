@@ -2,16 +2,20 @@
 package base
 
 import (
+	"image/color"
 	"math"
 	"net"
 	"log"
 	"time"
 
 	"periph.io/x/periph/host"
+	"periph.io/x/periph/conn/gpio"
+	"periph.io/x/periph/conn/gpio/gpioreg"
 	"periph.io/x/periph/conn/i2c"
 	"periph.io/x/periph/conn/i2c/i2creg"
 	"github.com/usedbytes/bno055"
 	"github.com/usedbytes/bot_matrix/datalink/netconn"
+	"github.com/usedbytes/linux-led"
 	"github.com/usedbytes/mini_mouse/bot/base/dev"
 	"github.com/usedbytes/mini_mouse/bot/base/motor"
 	"github.com/usedbytes/mini_mouse/bot/base/servo"
@@ -27,6 +31,8 @@ type Platform struct {
 
 	reconTime time.Duration
 
+	lowBat gpio.PinIO
+
 	i2cBus i2c.BusCloser
 	imu *bno055.Dev
 	vec []float64
@@ -37,6 +43,25 @@ type Platform struct {
 
 	servos *servo.Dev
 	reServos func() bool
+
+	led led.RGBLED
+	ledColor color.Color
+	ledTrigger led.Trigger
+}
+
+func (p *Platform) AddLed(rgb led.RGBLED) {
+	p.led = rgb
+
+	p.led.SetTrigger(p.ledTrigger)
+	p.UpdateLed()
+}
+
+func (p *Platform) UpdateLed() {
+	if p.led == nil {
+		return
+	}
+
+	p.led.SetColor(p.ledColor)
 }
 
 func (p *Platform) SetVelocity(a, b float32) {
@@ -159,6 +184,15 @@ func NewPlatform(/* Some config */) (*Platform, error) {
 		log.Fatal(err)
 	}
 
+	g := gpioreg.ByName("GPIO27")
+	if g == nil {
+		log.Fatal("Couldn't get low battery GPIO")
+	}
+
+	if err = g.In(gpio.PullDown, gpio.NoEdge); err != nil {
+		log.Fatal(err)
+	}
+
 	c, err := net.Dial("unix", "/tmp/sock")
 	if err != nil {
 		log.Fatal(err)
@@ -171,7 +205,10 @@ func NewPlatform(/* Some config */) (*Platform, error) {
 		mmPerRev: (30.5 * math.Pi),
 		wheelbase: 76,
 		i2cBus: b,
+		lowBat: g,
 		reconTime: time.Second * 5,
+		ledColor: color.NRGBA{0x00, 0xff, 0x00, 0x80},
+		ledTrigger: led.TriggerHeartbeat,
 	}
 
 	p.Motors = motor.NewMotors(dev)
@@ -250,6 +287,12 @@ func (p *Platform) Update() error {
 	pkts, err := p.dev.Poll()
 	if err != nil {
 		return err
+	}
+
+	low := p.lowBat.Read()
+	if low == gpio.High {
+		p.ledColor = color.NRGBA{0xff, 0x00, 0x00, 0x80}
+		p.UpdateLed()
 	}
 
 	if p.Camera != nil {

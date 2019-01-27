@@ -1,7 +1,6 @@
 package input
 
 import (
-	"image/color"
 	"log"
 	"time"
 
@@ -14,6 +13,8 @@ import (
 	"github.com/usedbytes/input2/factory"
 
 	"github.com/usedbytes/linux-led"
+
+	"github.com/usedbytes/mini_mouse/bot/base"
 )
 
 type Button int
@@ -105,7 +106,7 @@ type buttonMap struct {
 	button Button
 }
 
-func NewCollector() *Collector {
+func NewCollector(p *base.Platform) *Collector {
 	c := &Collector{
 		buttons: make(ButtonState),
 	}
@@ -120,8 +121,7 @@ func NewCollector() *Collector {
 
 			rgbled, ok := s.(led.RGBLED)
 			if ok {
-				rgbled.SetColor(color.NRGBA{0x00, 0xff, 0x00, 0xff})
-				rgbled.SetTrigger(led.TriggerHeartbeat)
+				p.AddLed(rgbled)
 			}
 
 			btnMap := []buttonMap{
