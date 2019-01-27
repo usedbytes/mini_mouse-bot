@@ -25,14 +25,18 @@ type Platform struct {
 
 	Motors *motor.Motors
 
+	reconTime time.Duration
+
 	i2cBus i2c.BusCloser
 	imu *bno055.Dev
-	servos *servo.Dev
 	vec []float64
 
 	Camera *picamera.Camera
 	frame picamera.Frame
 	frameTime time.Time
+
+	servos *servo.Dev
+	reServos func() bool
 }
 
 func (p *Platform) SetVelocity(a, b float32) {
@@ -136,6 +140,14 @@ func (p *Platform) CameraEnabled() bool {
 	return p.Camera.Enabled()
 }
 
+func (p *Platform) Reconnect(recon func() bool) {
+	time.AfterFunc(p.reconTime, func() {
+		if !recon() {
+			p.Reconnect(recon)
+		}
+	})
+}
+
 func NewPlatform(/* Some config */) (*Platform, error) {
 	_, err := host.Init()
 	if err != nil {
@@ -159,6 +171,7 @@ func NewPlatform(/* Some config */) (*Platform, error) {
 		mmPerRev: (30.5 * math.Pi),
 		wheelbase: 76,
 		i2cBus: b,
+		reconTime: time.Second * 5,
 	}
 
 	p.Motors = motor.NewMotors(dev)
@@ -182,13 +195,23 @@ func NewPlatform(/* Some config */) (*Platform, error) {
 		}
 	}
 
-	servos, err := servo.NewI2C(b, 0x40)
-	if err != nil {
-		log.Println("Couldn't get Servos")
-	} else {
+	p.reServos = func() bool {
+		servos, err := servo.NewI2C(b, 0x40)
+		if err != nil {
+			log.Println("Couldn't get Servos")
+			return false
+		}
+
 		p.servos = servos
 		p.servos.SetPos(0.0, 0.0)
 		p.servos.Enable(true, true)
+
+		return true
+	}
+
+	haveServos := p.reServos()
+	if !haveServos {
+		p.Reconnect(p.reServos)
 	}
 
 	return p, nil
@@ -199,7 +222,13 @@ func (p *Platform) EnableServos(a, b bool) error {
 		return nil
 	}
 
-	return p.servos.Enable(a, b)
+	err := p.servos.Enable(a, b)
+	if err != nil {
+		p.servos = nil
+		p.Reconnect(p.reServos)
+	}
+
+	return err
 }
 
 func (p *Platform) SetServos(a, b float32) error {
@@ -207,7 +236,13 @@ func (p *Platform) SetServos(a, b float32) error {
 		return nil
 	}
 
-	return p.servos.SetPos(a, b)
+	err := p.servos.SetPos(a, b)
+	if err != nil {
+		p.servos = nil
+		p.Reconnect(p.reServos)
+	}
+
+	return err
 }
 
 func (p *Platform) Update() error {
