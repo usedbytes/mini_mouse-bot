@@ -14,6 +14,7 @@ import (
 	"github.com/usedbytes/bot_matrix/datalink/netconn"
 	"github.com/usedbytes/mini_mouse/bot/base/dev"
 	"github.com/usedbytes/mini_mouse/bot/base/motor"
+	"github.com/usedbytes/mini_mouse/bot/base/servo"
 	"github.com/usedbytes/picamera"
 )
 
@@ -26,6 +27,7 @@ type Platform struct {
 
 	i2cBus i2c.BusCloser
 	imu *bno055.Dev
+	servos *servo.Dev
 	vec []float64
 
 	Camera *picamera.Camera
@@ -180,7 +182,32 @@ func NewPlatform(/* Some config */) (*Platform, error) {
 		}
 	}
 
+	servos, err := servo.NewI2C(b, 0x40)
+	if err != nil {
+		log.Println("Couldn't get Servos")
+	} else {
+		p.servos = servos
+		p.servos.SetPos(0.0, 0.0)
+		p.servos.Enable(true, true)
+	}
+
 	return p, nil
+}
+
+func (p *Platform) EnableServos(a, b bool) error {
+	if p.servos == nil {
+		return nil
+	}
+
+	return p.servos.Enable(a, b)
+}
+
+func (p *Platform) SetServos(a, b float32) error {
+	if p.servos == nil {
+		return nil
+	}
+
+	return p.servos.SetPos(a, b)
 }
 
 func (p *Platform) Update() error {

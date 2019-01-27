@@ -13,15 +13,20 @@ type Task struct {
 	input *input.Collector
 
 	prevA, prevB float32
+	prevL2, prevR2 float32
 	reverse bool
 }
 
 func (t *Task) Enter() {
 	t.platform.SetVelocity(0, 0)
+	t.platform.SetServos(0.0, 0.0)
+	t.platform.EnableServos(true, true)
 }
 
 func (t *Task) Exit() {
 	t.platform.SetVelocity(0, 0)
+	t.platform.SetServos(0.0, 0.0)
+	t.platform.EnableServos(false, false)
 }
 
 func (t *Task) Tick(buttons input.ButtonState) {
@@ -44,6 +49,12 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		t.reverse = !t.reverse
 		buttons[input.Triangle] = input.None
 	}
+
+	l2, r2 := t.input.GetTriggers()
+	if l2 != t.prevL2 || r2 != t.prevR2 {
+		t.platform.SetServos(l2, r2)
+	}
+	t.prevL2, t.prevR2 = l2, r2
 }
 
 func NewTask(ip *input.Collector, pl *base.Platform) *Task {
