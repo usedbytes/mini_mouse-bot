@@ -2,6 +2,7 @@
 package bounce
 
 import (
+	"image"
 	"math"
 	"time"
 
@@ -56,7 +57,14 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		t.running = !t.running
 	}
 
-	horz := cv.FindHorizon(frame)
+	var img image.Image
+	switch v := frame.(type) {
+	case *picamera.YCbCrFrame:
+		img = &v.YCbCr
+	default:
+		img = frame
+	}
+	horz := cv.FindHorizon(img)
 
 	if !t.running {
 		return
