@@ -33,6 +33,7 @@ type Telem struct {
 	Euler []float64
 	Pose Pose
 	Frame image.Image
+	Times []time.Time
 }
 
 func (t *Telem) SetEuler(vec []float64) {
@@ -56,6 +57,22 @@ func (t *Telem) SetPose(x, y, heading float64) {
 	defer t.lock.Unlock()
 
 	t.Pose = Pose{X: x, Y: y, Heading: heading}
+}
+
+func (t *Telem) SetTimings(a, b, c, d time.Time) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	t.Times = []time.Time{a, b, c, d}
+}
+
+func (t *Telem) GetTimings(ignored bool, vec *[]time.Time) error {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	*vec = t.Times
+
+	return nil
 }
 
 func (t *Telem) GetFrame(ignored bool, img *image.Image) error {
@@ -172,6 +189,7 @@ func main() {
 	lastTime := time.Now()
 
 	for _ = range tick.C {
+		a := time.Now()
 		err = platform.Update()
 		if err != nil {
 			log.Println(err.Error())
@@ -188,7 +206,9 @@ func main() {
 		}
 
 		buttons := ip.Buttons()
+		b := time.Now()
 		planner.Tick(buttons)
+		c := time.Now()
 
 		if buttons[input.Triangle] == input.Pressed {
 			mod.ResetOrientation()
@@ -232,5 +252,7 @@ func main() {
 		if buttons[input.Circle] == input.Pressed {
 			planner.SetTask("rc")
 		}
+		d := time.Now()
+		telem.SetTimings(a, b, c, d)
 	}
 }
