@@ -118,7 +118,7 @@ func (p *Platform) GetMaxVelocity() float32 {
 	max := p.Motors.GetMaxRPS()
 
 	if p.boost == BoostSlow {
-		max *= 0.5
+		max *= 0.3
 	} else if p.boost == BoostFast {
 		max *= 2
 	}
