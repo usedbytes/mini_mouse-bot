@@ -23,6 +23,8 @@ type Task struct {
 	turning bool
 	dir float32
 	lastTime time.Time
+
+	max, min float32
 }
 
 func (t *Task) Enter() {
@@ -64,7 +66,7 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	default:
 		img = frame
 	}
-	horz := cv.FindHorizon(img)
+	horz := 1.0 - cv.FindHorizon(img)
 
 	if !t.running {
 		return
@@ -78,15 +80,18 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		t.turning = false
 	}
 
-	if horz <= 0.40 {
+	if horz <= t.min {
 		t.dir += float32(-math.Pi / 2)
 		t.heading.SetHeading(t.dir)
 		t.turning = true
 	} else {
-		if math.IsNaN(float64(horz)) {
-			horz = 1.0
+		if math.IsNaN(float64(horz)) || horz > t.max {
+			horz = t.max
 		}
-		speed := t.platform.GetMaxVelocity() * horz
+
+		slow := ((t.max - horz) / (t.max - t.min)) * 0.5
+		maxSpeed := t.platform.GetMaxVelocity()
+		speed := maxSpeed - (slow * maxSpeed)
 		t.heading.DriveHeading(speed, t.dir)
 		t.heading.Tick(buttons)
 		//t.platform.SetArc(t.platform.GetMaxVelocity() * horz * horz, 0)
@@ -97,5 +102,7 @@ func NewTask(m *model.Model, pl *base.Platform) *Task {
 	return &Task{
 		platform: pl,
 		heading: heading.NewTask(m, pl),
+		max: float32(0.51),
+		min: float32(0.25),
 	}
 }
