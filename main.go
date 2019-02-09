@@ -220,7 +220,7 @@ func main() {
 			} else {
 				platform.SetCameraFormat(picamera.FORMAT_I420)
 				platform.Camera.SetCrop(picamera.Rect(0.0, 0.0, 1.0, 1.0))
-				platform.Camera.SetOutSize(160, 160)
+				platform.Camera.SetOutSize(64, 64)
 				platform.EnableCamera()
 			}
 		}
