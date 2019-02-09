@@ -30,11 +30,13 @@ func (t *Task) Enter() {
 	t.platform.SetCameraFormat(picamera.FORMAT_YV12)
 	t.platform.Camera.SetOutSize(16, 16)
 	t.platform.EnableCamera()
+	t.platform.SetBoost(base.BoostFast)
 }
 
 func (t *Task) Exit() {
 	t.platform.SetVelocity(0, 0)
 	t.platform.DisableCamera()
+	t.platform.SetBoost(base.BoostNone)
 }
 
 func (t *Task) Tick(buttons input.ButtonState) {
@@ -101,7 +103,8 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		t.side = val
 	}
 
-	vel := float32(float64(t.maxSpeed) - math.Abs(float64(val)) * float64(2 * t.maxSpeed))
+	t.maxSpeed = t.platform.GetMaxVelocity() * 0.8
+	vel := float32(float64(t.maxSpeed) - math.Abs(float64(val)) * float64(t.maxSpeed))
 	omega := t.maxTurn * val
 	t.platform.SetArc(vel, omega)
 }
