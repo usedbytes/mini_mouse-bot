@@ -139,8 +139,8 @@ func NewMotors(dev *dev.Dev) *Motors {
 		maxRPS: 4.13,
 
 		motors: []motor {
-			{ alpha: 2 * math.Pi / 600 },
-			{ alpha: 2 * math.Pi / 600 },
+			{ alpha: 2 * math.Pi / 590 },
+			{ alpha: 2 * math.Pi / 590 },
 		},
 	}
 
