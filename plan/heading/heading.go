@@ -17,6 +17,7 @@ type Task struct {
 
 	speed, heading float32
 	OnCourse bool
+	maxRot, minRot float64
 }
 
 func normalise(rads float32) float32 {
@@ -40,26 +41,27 @@ func (t *Task) DriveHeading(speed, heading float32) {
 }
 
 func (t *Task) Tick(buttons input.ButtonState) {
-	e := math.Pi / 150
-	maxRot := float64(t.platform.GetMaxOmega()) * 0.5
-	minRot := 0.01 * maxRot
+	coarse := math.Pi / 150
+	fine := math.Pi / 180
 
 	_, theta := t.model.GetPose()
 
 	dTheta := float64(normalise(t.heading - theta))
 
-	val := float64(dTheta) - math.Copysign(e, dTheta)
-	if math.Signbit(val) != math.Signbit(dTheta) {
-		val = 0
+	val := 0.0
+	if math.Abs(dTheta) <= fine || (math.Abs(dTheta) < coarse && t.speed == 0.0) {
 		t.OnCourse = true
+		t.platform.SetArc(float32(t.speed), float32(0))
+		return
+	} else if math.Abs(dTheta) > coarse {
+		val = math.Max(math.Min((dTheta - math.Copysign(coarse, dTheta)) / (math.Pi / 2), 1.0), -1.0)
 	}
-	val = val / (math.Pi - e)
 
-	w := maxRot * val
+	w := t.maxRot * val
 	speed := float64(t.speed) - val * float64(t.speed)
 
-	if math.Abs(w) < minRot {
-		w = math.Copysign(minRot, w)
+	if math.Abs(w) < t.minRot {
+		w = math.Copysign(t.minRot, w)
 	}
 
 	t.platform.SetArc(float32(speed), float32(w))
@@ -69,5 +71,7 @@ func NewTask(m *model.Model, pl *base.Platform) *Task {
 	return &Task{
 		platform: pl,
 		model: m,
+		maxRot: float64(pl.GetMaxOmega()),
+		minRot: 0.3,
 	}
 }
