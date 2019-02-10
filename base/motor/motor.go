@@ -53,6 +53,25 @@ func (m *Motors) setRadss(id int32, speed float64) {
 	m.dev.Queue(&p)
 }
 
+func (m *Motors) ControlledMove(aRevs, aRPS, bRevs, bRPS float32) {
+	p := datalink.Packet{ Endpoint: 2 }
+
+	pa := -float64(m.rpsToRadss(aRPS))
+	pb := float64(m.rpsToRadss(bRPS))
+
+	da := float64(m.revsToRads(aRevs))
+	db := float64(m.revsToRads(bRevs))
+
+	buf := &bytes.Buffer{}
+	binary.Write(buf, binary.LittleEndian, float64(da))
+	binary.Write(buf, binary.LittleEndian, float64(pa))
+	binary.Write(buf, binary.LittleEndian, float64(db))
+	binary.Write(buf, binary.LittleEndian, float64(pb))
+	p.Data = buf.Bytes()
+
+	m.dev.Queue(&p)
+}
+
 func (m *Motors) SetRPS(a, b float32) {
 	pa := float64(m.rpsToRadss(a))
 	pb := float64(m.rpsToRadss(b))
@@ -100,6 +119,14 @@ func (m *Motors) rpsToRadss(rps float32) float32 {
 	}
 	radss := float32(rps * math.Pi * 2)
 	return radss
+}
+
+func (m *Motors) revsToRads(revs float32) float32 {
+	if revs == 0 {
+		return 0
+	}
+	rads := float32(revs * math.Pi * 2)
+	return rads
 }
 
 func (m *Motors) Receive(pkt *datalink.Packet) interface{} {

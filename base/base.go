@@ -114,6 +114,13 @@ func (p *Platform) SetArc(vel, w float32) {
 	p.Motors.SetRPS(aRps, bRps)
 }
 
+func (p *Platform) ControlledMove(mm, vel float32) {
+	revs := float32(math.Abs(float64(mm))) / p.mmPerRev
+	vel = vel / p.mmPerRev
+
+	p.Motors.ControlledMove(revs, vel, revs, vel)
+}
+
 func (p *Platform) GetMaxVelocity() float32 {
 	max := p.Motors.GetMaxRPS()
 
