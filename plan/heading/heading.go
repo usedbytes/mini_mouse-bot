@@ -49,7 +49,7 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	dTheta := float64(normalise(t.heading - theta))
 
 	val := 0.0
-	if math.Abs(dTheta) <= fine || (math.Abs(dTheta) < coarse && t.speed == 0.0) {
+	if math.Abs(dTheta) <= fine {
 		t.OnCourse = true
 		t.platform.SetArc(float32(t.speed), float32(0))
 		return
