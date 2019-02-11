@@ -121,6 +121,10 @@ func (p *Platform) ControlledMove(mm, vel float32) {
 	p.Motors.ControlledMove(revs, vel, revs, vel)
 }
 
+func (p *Platform) Moving() bool {
+	return p.Motors.Moving()
+}
+
 func (p *Platform) GetMaxVelocity() float32 {
 	max := p.Motors.GetMaxRPS()
 

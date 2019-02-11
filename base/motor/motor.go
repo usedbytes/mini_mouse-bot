@@ -21,12 +21,22 @@ type Motors struct {
 	aRPS, bRPS float32
 	aRevs, bRevs float32
 
+	aMove, bMove bool
+
 	motors []motor
 }
+
+const (
+	MOVE_NONE int32 = 0
+	MOVE_STARTED = 1
+	MOVE_DONE = 2
+	MOVE_CANCELLED = 3
+)
 
 type StepReport struct {
 	Id uint32
 	Steps int32
+	MoveStatus int32
 }
 
 func rxStepReport(p *datalink.Packet) interface{} {
@@ -38,6 +48,7 @@ func rxStepReport(p *datalink.Packet) interface{} {
 	buf := bytes.NewBuffer(p.Data)
 	binary.Read(buf, binary.LittleEndian, &rep.Id)
 	binary.Read(buf, binary.LittleEndian, &rep.Steps)
+	binary.Read(buf, binary.LittleEndian, &rep.MoveStatus)
 
 	return rep
 }
@@ -51,6 +62,10 @@ func (m *Motors) setRadss(id int32, speed float64) {
 	p.Data = buf.Bytes()
 
 	m.dev.Queue(&p)
+}
+
+func (m *Motors) Moving() bool {
+	return m.aMove || m.bMove
 }
 
 func (m *Motors) ControlledMove(aRevs, aRPS, bRevs, bRPS float32) {
@@ -70,6 +85,8 @@ func (m *Motors) ControlledMove(aRevs, aRPS, bRevs, bRPS float32) {
 	p.Data = buf.Bytes()
 
 	m.dev.Queue(&p)
+
+	m.aMove, m.bMove = true, true
 }
 
 func (m *Motors) SetRPS(a, b float32) {
@@ -98,7 +115,7 @@ func (m *motor) stepsToRevs(steps int32) float32 {
 
 func (m *motor) stepsToRps(steps int32) float32 {
 	revs := m.stepsToRevs(steps)
-	// TODO: Need to not hardcode this
+	// TODO: Need to not hardcode this. Assumed 60Hz in yapidh
 	rps := revs / 0.016
 	return rps
 }
@@ -107,9 +124,15 @@ func (m *Motors) AddSteps(steps *StepReport) {
 	if (steps.Id == 0) {
 		m.aRevs -= m.motors[0].stepsToRevs(steps.Steps)
 		m.aRPS = -m.motors[0].stepsToRps(steps.Steps)
+		if steps.MoveStatus == MOVE_DONE || steps.MoveStatus == MOVE_CANCELLED {
+			m.aMove = false
+		}
 	} else if (steps.Id == 1) {
 		m.bRevs += m.motors[1].stepsToRevs(steps.Steps)
 		m.bRPS = m.motors[1].stepsToRps(steps.Steps)
+		if steps.MoveStatus == MOVE_DONE || steps.MoveStatus == MOVE_CANCELLED {
+			m.bMove = false
+		}
 	}
 }
 

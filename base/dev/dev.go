@@ -91,7 +91,7 @@ func (d *Dev) Poll() ([]interface{}, error) {
 }
 
 func NewDev(transactor datalink.Transactor) *Dev {
-	minNum := 0
+	minNum := 4
 	allocNum := 4
 	dev := &Dev{
 		transactor: transactor,
