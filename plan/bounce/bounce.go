@@ -16,6 +16,13 @@ import (
 
 const TaskName = "bounce"
 
+const (
+	Left = 0
+	Right = 1
+)
+
+var maze []int = []int{ Left, Left, Right, Right, Left, Left, Left, Right }
+
 type Task struct {
 	platform *base.Platform
 	heading *heading.Task
@@ -25,18 +32,21 @@ type Task struct {
 	lastTime time.Time
 
 	max, min float32
+	turn int
 }
 
 func (t *Task) Enter() {
 	t.platform.DisableCamera()
 	t.platform.SetCameraCrop(picamera.Rect(0.0, 0.3, 1.0, 1.0))
 	t.platform.SetCameraFormat(picamera.FORMAT_I420)
-	t.platform.Camera.SetOutSize(32, 64)
+	t.platform.Camera.SetOutSize(40, 80)
 	t.platform.EnableCamera()
 
 	t.dir = 0.0
 	t.running = false
 	t.turning = false
+
+	t.turn = 0
 }
 
 func (t *Task) Exit() {
@@ -81,9 +91,22 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	}
 
 	if horz <= t.min {
-		t.dir += float32(-math.Pi / 2)
+		if t.turn >= len(maze) {
+			t.platform.SetVelocity(0, 0)
+			t.running = false
+			return
+		}
+		turn := maze[t.turn]
+
+		if turn == Left {
+			t.dir += float32(-math.Pi / 2)
+		} else {
+			t.dir += float32(math.Pi / 2)
+		}
 		t.heading.SetHeading(t.dir)
 		t.turning = true
+
+		t.turn++
 	} else {
 		if math.IsNaN(float64(horz)) || horz > t.max {
 			horz = t.max
