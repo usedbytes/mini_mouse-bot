@@ -2,6 +2,7 @@
 package waypoint
 
 import (
+	"image/color"
 	"log"
 	"math"
 
@@ -50,6 +51,10 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	}
 
 	log.Printf("dPos: %v, heading: %v dtheta: %v\n", dPos, heading * 180 / math.Pi, dTheta * 180 / math.Pi)
+}
+
+func (t *Task) Color() color.Color {
+	return color.NRGBA{ 0xf4, 0x9e, 0x42, 0x80 }
 }
 
 func NewTask(m *model.Model, pl *base.Platform) *Task {

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/usedbytes/mini_mouse/bot/interface/input"
+	"github.com/usedbytes/mini_mouse/bot/interface/menu"
 	"github.com/usedbytes/mini_mouse/bot/base"
 	"github.com/usedbytes/mini_mouse/bot/model"
 	"github.com/usedbytes/mini_mouse/bot/plan"
@@ -175,14 +176,13 @@ func main() {
 
 	lineTask := line.NewTask(platform)
 
-	planner := plan.NewPlanner()
-	planner.AddTask(line.TaskName, lineTask)
-	planner.AddTask(waypoint.TaskName, wpTask)
-	planner.AddTask(heading.TaskName, headingTask)
-	planner.AddTask(bounce.TaskName, bounceTask)
-	planner.AddTask(rc.TaskName, rc.NewTask(ip, platform))
+	planner := plan.NewPlanner(platform)
+	planner.AddTask(rc.TaskName, rc.NewTask(ip, platform), menu.None)
+	planner.AddTask(line.TaskName, lineTask, menu.North)
+	planner.AddTask(bounce.TaskName, bounceTask, menu.East)
+	planner.AddTask(waypoint.TaskName, wpTask, menu.South)
+	planner.AddTask(heading.TaskName, headingTask, menu.West)
 	planner.SetTask(rc.TaskName)
-
 
 	tick := time.NewTicker(16 * time.Millisecond)
 
@@ -214,6 +214,10 @@ func main() {
 			mod.ResetOrientation()
 		}
 
+		if buttons[input.Circle] == input.Pressed {
+			planner.SetTask("rc")
+		}
+
 		if buttons[input.Share] == input.Pressed {
 			if platform.CameraEnabled() {
 				platform.DisableCamera()
@@ -225,33 +229,6 @@ func main() {
 			}
 		}
 
-		if buttons[input.Square] == input.Pressed {
-			mod.ResetOrientation()
-			planner.SetTask(bounce.TaskName)
-			/*
-			planner.SetTask(heading.TaskName)
-			log.Println("Square.")
-			dir = 0.0
-			headingTask.DriveHeading(200, dir)
-			tmpTime = time.Now()
-			*/
-		}
-
-		/*
-		if planner.CurrentTask() == headingTask && time.Since(tmpTime) >= 4 * time.Second {
-			dir += math.Pi / 2
-			headingTask.DriveHeading(200, dir)
-			tmpTime = time.Now()
-		}
-		*/
-
-		if buttons[input.Cross] == input.Pressed {
-			planner.SetTask(line.TaskName)
-		}
-
-		if buttons[input.Circle] == input.Pressed {
-			planner.SetTask("rc")
-		}
 		d := time.Now()
 		telem.SetTimings(a, b, c, d)
 	}

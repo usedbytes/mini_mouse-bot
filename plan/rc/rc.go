@@ -2,6 +2,8 @@
 package rc
 
 import (
+	"image/color"
+
 	"github.com/usedbytes/mini_mouse/bot/base"
 	"github.com/usedbytes/mini_mouse/bot/interface/input"
 )
@@ -73,6 +75,10 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		t.platform.SetServos(l2, r2)
 	}
 	t.prevL2, t.prevR2 = l2, r2
+}
+
+func (t *Task) Color() color.Color {
+	return color.NRGBA{ 0x00, 0xff, 0x00, 0x80 }
 }
 
 func NewTask(ip *input.Collector, pl *base.Platform) *Task {

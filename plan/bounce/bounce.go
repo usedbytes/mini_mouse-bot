@@ -3,6 +3,7 @@ package bounce
 
 import (
 	"image"
+	"image/color"
 	"math"
 	"time"
 
@@ -119,6 +120,10 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		t.heading.Tick(buttons)
 		//t.platform.SetArc(t.platform.GetMaxVelocity() * horz * horz, 0)
 	}
+}
+
+func (t *Task) Color() color.Color {
+	return color.NRGBA{ 0xff, 0x00, 0xff, 0x80 }
 }
 
 func NewTask(m *model.Model, pl *base.Platform) *Task {

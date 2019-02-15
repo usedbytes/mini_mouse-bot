@@ -2,6 +2,7 @@
 package heading
 
 import (
+	"image/color"
 	"math"
 
 	"github.com/usedbytes/mini_mouse/bot/base"
@@ -65,6 +66,10 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	}
 
 	t.platform.SetArc(float32(speed), float32(w))
+}
+
+func (t *Task) Color() color.Color {
+	return color.NRGBA{ 0xff, 0x00, 0x80, 0x80 }
 }
 
 func NewTask(m *model.Model, pl *base.Platform) *Task {

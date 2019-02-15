@@ -1,7 +1,6 @@
 package menu
 
 import (
-	"fmt"
 	"image/color"
 
 	"github.com/usedbytes/linux-led"
@@ -12,7 +11,7 @@ import (
 
 type Direction int
 const (
-	none Direction = -1
+	None Direction = -1
 
 	North Direction = iota
 	East
@@ -44,7 +43,7 @@ func (m *Menu) AddItem(dir Direction, c color.Color, pick func()) {
 }
 
 func (m *Menu) Tick(buttons input.ButtonState) {
-	dir := none
+	dir := None
 	if buttons[input.Up] == input.Held || buttons[input.Up] == input.LongPress {
 		dir = North
 	} else if buttons[input.Right] == input.Held || buttons[input.Right] == input.LongPress  {
@@ -56,34 +55,32 @@ func (m *Menu) Tick(buttons input.ButtonState) {
 	}
 
 	switch dir {
-	case none:
-		if m.dir == none {
+	case None:
+		if m.dir == None {
 			return
 		}
 		m.dir = dir
-		fmt.Println("Reset")
 		m.platform.ResetLEDColor()
+		m.platform.SetLEDTrigger(led.TriggerHeartbeat)
 	case North, East, South, West:
 		item, ok := m.items[dir]
 		if !ok {
 			return
 		}
 
-		if m.dir == none {
-			fmt.Println("Set trigger none")
+		if m.dir == None {
 			m.platform.SetLEDTrigger(led.TriggerNone)
 		}
 
 		if m.dir != dir {
-			fmt.Println("Set color", item.color)
 			m.platform.SetLEDColor(item.color)
 
 			m.dir = dir
 		}
 
 		if buttons[input.Cross] == input.Pressed {
-			fmt.Println("Click")
-			m.platform.SetLEDTrigger(led.TriggerNone)
+			m.platform.SetLEDTrigger(led.TriggerHeartbeat)
+			m.dir = None
 			item.pick()
 		}
 	}

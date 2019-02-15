@@ -3,6 +3,7 @@ package line
 
 import (
 	"fmt"
+	"image/color"
 	"math"
 	"time"
 
@@ -107,6 +108,10 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	vel := float32(float64(t.maxSpeed) - math.Abs(float64(val)) * float64(t.maxSpeed))
 	omega := t.maxTurn * val
 	t.platform.SetArc(vel, omega)
+}
+
+func (t *Task) Color() color.Color {
+	return color.NRGBA{ 0xff, 0xff, 0x00, 0x80 }
 }
 
 func NewTask(pl *base.Platform) *Task {

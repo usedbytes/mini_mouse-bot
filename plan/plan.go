@@ -2,13 +2,17 @@
 package plan
 
 import (
+	"image/color"
 	"fmt"
 
+	"github.com/usedbytes/mini_mouse/bot/base"
 	"github.com/usedbytes/mini_mouse/bot/interface/input"
+	"github.com/usedbytes/mini_mouse/bot/interface/menu"
 )
 
 type Task interface {
 	Tick(buttons input.ButtonState)
+	Color() color.Color
 }
 
 type EnterExitTask interface {
@@ -20,10 +24,15 @@ type EnterExitTask interface {
 type Planner struct {
 	current Task
 	tasks map[string]Task
+	idleTask Task
+	mainMenu *menu.Menu
+	platform *base.Platform
 }
 
 func (p *Planner) Tick(buttons input.ButtonState) {
-	// TODO: Do things which are irrespective of task
+	if p.current == p.idleTask {
+		p.mainMenu.Tick(buttons)
+	}
 
 	if p.current == nil {
 		return
@@ -41,10 +50,10 @@ func (p *Planner) SetTask(name string) error {
 	if ok {
 		exit.Exit()
 	}
-	// TODO: Stop current task
 
 	p.current = p.tasks[name]
 
+	p.platform.SetLEDColor(p.current.Color())
 	enter, ok := p.current.(EnterExitTask)
 	if ok {
 		enter.Enter()
@@ -52,12 +61,18 @@ func (p *Planner) SetTask(name string) error {
 	return nil
 }
 
-func (p *Planner) AddTask(name string, task Task) error {
+func (p *Planner) AddTask(name string, task Task, d menu.Direction) error {
 	if _, ok := p.tasks[name]; ok {
 		return fmt.Errorf("Duplicate task name '%s'", name)
 	}
 
 	p.tasks[name] = task
+	if d != menu.None {
+		p.mainMenu.AddItem(d, task.Color(), func() { p.SetTask(name) })
+	} else {
+		p.idleTask = task
+	}
+
 	return nil
 }
 
@@ -65,8 +80,10 @@ func (p *Planner) CurrentTask() Task {
 	return p.current
 }
 
-func NewPlanner() *Planner {
+func NewPlanner(p *base.Platform) *Planner {
 	return &Planner{
 		tasks: make(map[string]Task),
+		platform: p,
+		mainMenu: menu.NewMenu(p),
 	}
 }
