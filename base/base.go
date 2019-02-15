@@ -60,7 +60,28 @@ type Platform struct {
 func (p *Platform) AddLed(rgb led.RGBLED) {
 	p.led = rgb
 
+	p.SetLEDTrigger(p.ledTrigger)
+	p.UpdateLed()
+}
+
+func (p *Platform) SetLEDTrigger(trig led.Trigger) {
+	if p.led == nil {
+		return
+	}
+
+	p.ledTrigger = trig
 	p.led.SetTrigger(p.ledTrigger)
+	p.UpdateLed()
+}
+
+func (p *Platform) SetLEDColor(c color.Color) {
+	p.ledColor = c
+	p.UpdateLed()
+}
+
+func (p *Platform) ResetLEDColor() {
+	p.SetLEDTrigger(led.TriggerHeartbeat)
+	p.ledColor = color.NRGBA{0x00, 0xff, 0x00, 0x80}
 	p.UpdateLed()
 }
 
