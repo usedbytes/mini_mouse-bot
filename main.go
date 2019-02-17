@@ -16,8 +16,10 @@ import (
 	"github.com/usedbytes/mini_mouse/bot/base"
 	"github.com/usedbytes/mini_mouse/bot/model"
 	"github.com/usedbytes/mini_mouse/bot/plan"
+	"github.com/usedbytes/mini_mouse/bot/plan/cvdev"
 	"github.com/usedbytes/mini_mouse/bot/plan/rc"
 	"github.com/usedbytes/mini_mouse/bot/plan/line"
+	"github.com/usedbytes/mini_mouse/bot/plan/rainbow"
 	"github.com/usedbytes/mini_mouse/bot/plan/waypoint"
 	"github.com/usedbytes/mini_mouse/bot/plan/heading"
 	"github.com/usedbytes/mini_mouse/bot/plan/bounce"
@@ -175,13 +177,16 @@ func main() {
 	bounceTask := bounce.NewTask(mod, platform)
 
 	lineTask := line.NewTask(platform)
+	rainbowTask := rainbow.NewTask(mod, platform)
+
+	cvdevTask := cvdev.NewTask(ip, platform)
 
 	planner := plan.NewPlanner(platform)
 	planner.AddTask(rc.TaskName, rc.NewTask(ip, platform), menu.None)
 	planner.AddTask(line.TaskName, lineTask, menu.North)
-	planner.AddTask(bounce.TaskName, bounceTask, menu.East)
-	planner.AddTask(waypoint.TaskName, wpTask, menu.South)
-	planner.AddTask(heading.TaskName, headingTask, menu.West)
+	planner.AddTask(rainbow.TaskName, rainbowTask, menu.East)
+	planner.AddTask(cvdev.TaskName, cvdevTask, menu.South)
+	planner.AddTask(bounce.TaskName, bounceTask, menu.West)
 	planner.SetTask(rc.TaskName)
 
 	tick := time.NewTicker(16 * time.Millisecond)

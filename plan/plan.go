@@ -51,6 +51,7 @@ func (p *Planner) SetTask(name string) error {
 		exit.Exit()
 	}
 
+	fmt.Println("Task", name)
 	p.current = p.tasks[name]
 
 	p.platform.SetLEDColor(p.current.Color())
