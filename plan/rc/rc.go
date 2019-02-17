@@ -65,9 +65,9 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	t.prevA = a
 	t.prevB = b
 
-	if buttons[input.Triangle] == input.Pressed {
+	if buttons[input.Square] == input.Pressed {
 		t.reverse = !t.reverse
-		buttons[input.Triangle] = input.None
+		buttons[input.Square] = input.None
 	}
 
 	l2, r2 := t.input.GetTriggers()
