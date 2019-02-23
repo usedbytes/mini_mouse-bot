@@ -26,6 +26,7 @@ var maze []int = []int{ Left, Left, Right, Right, Left, Left, Left, Right }
 
 type Task struct {
 	platform *base.Platform
+	mod *model.Model
 	heading *heading.Task
 	running bool
 	turning bool
@@ -43,6 +44,8 @@ func (t *Task) Enter() {
 	t.platform.Camera.SetOutSize(40, 80)
 	t.platform.EnableCamera()
 
+	t.mod.ResetOrientation()
+
 	t.dir = 0.0
 	t.running = false
 	t.turning = false
@@ -51,6 +54,7 @@ func (t *Task) Enter() {
 }
 
 func (t *Task) Exit() {
+	t.platform.SetBoost(base.BoostNone)
 	t.platform.SetVelocity(0, 0)
 	t.platform.DisableCamera()
 }
@@ -89,6 +93,7 @@ func (t *Task) Tick(buttons input.ButtonState) {
 			return
 		}
 		t.turning = false
+		t.platform.SetBoost(base.BoostFast)
 	}
 
 	if horz <= t.min {
@@ -104,6 +109,7 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		} else {
 			t.dir += float32(math.Pi / 2)
 		}
+		t.platform.SetBoost(base.BoostNone)
 		t.heading.SetHeading(t.dir)
 		t.turning = true
 
@@ -113,6 +119,7 @@ func (t *Task) Tick(buttons input.ButtonState) {
 			horz = t.max
 		}
 
+		t.platform.SetBoost(base.BoostFast)
 		slow := ((t.max - horz) / (t.max - t.min)) * 0.5
 		maxSpeed := t.platform.GetMaxVelocity()
 		speed := maxSpeed - (slow * maxSpeed)
@@ -129,6 +136,7 @@ func (t *Task) Color() color.Color {
 func NewTask(m *model.Model, pl *base.Platform) *Task {
 	return &Task{
 		platform: pl,
+		mod: m,
 		heading: heading.NewTask(m, pl),
 		max: float32(0.51),
 		min: float32(0.25),
