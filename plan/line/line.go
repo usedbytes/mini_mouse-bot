@@ -32,6 +32,8 @@ func (t *Task) Enter() {
 	t.platform.Camera.SetOutSize(16, 16)
 	t.platform.EnableCamera()
 	t.platform.SetBoost(base.BoostFast)
+
+	t.running = false
 }
 
 func (t *Task) Exit() {
