@@ -110,27 +110,38 @@ func (p *Platform) SetBoost(b Boost) {
 	p.boost = b
 }
 
-func (p *Platform) SetArc(vel, w float32) {
-	deltaV := (w * p.wheelbase) / 2
-
-	aVel := vel + deltaV / 2
-	bVel := vel - deltaV / 2
-
-	red := float32(0.0)
-	if aVel > p.GetMaxVelocity() {
-		red = aVel - p.GetMaxVelocity()
-	} else if aVel < -p.GetMaxVelocity() {
-		red = aVel + p.GetMaxVelocity()
-	} else if bVel > p.GetMaxVelocity() {
-		red = bVel - p.GetMaxVelocity()
-	} else if bVel < -p.GetMaxVelocity() {
-		red = bVel + p.GetMaxVelocity()
+func maxAbsAB(a, b float64) (abs float64, bNotA bool, sign float64) {
+	if math.Abs(a) > math.Abs(b) {
+		return math.Abs(a), false, math.Copysign(1.0, a)
 	}
-	aVel -= red
-	bVel -= red
 
-	aRps := aVel / p.mmPerRev
-	bRps := bVel / p.mmPerRev
+	return math.Abs(b), true, math.Copysign(1.0, b)
+}
+
+func (p *Platform) SetArc(vel, w float32) {
+	platformMax := float64(p.GetMaxVelocity())
+	deltaV := float64(w * p.wheelbase)
+
+	if deltaV > 2 * platformMax {
+		deltaV = 2 * platformMax
+	}
+
+	aVel := float64(vel) + deltaV / 2
+	bVel := float64(vel) - deltaV / 2
+
+	maxReq, bNotA, sign := maxAbsAB(float64(aVel), float64(bVel))
+	if maxReq > platformMax {
+		if bNotA {
+			bVel = math.Copysign(platformMax, sign)
+			aVel = bVel - math.Copysign(deltaV, sign)
+		} else {
+			aVel = math.Copysign(platformMax, sign)
+			bVel = aVel - math.Copysign(deltaV, sign)
+		}
+	}
+
+	aRps := float32(aVel) / p.mmPerRev
+	bRps := float32(bVel) / p.mmPerRev
 
 	p.Motors.SetRPS(aRps, bRps)
 }
@@ -160,7 +171,7 @@ func (p *Platform) GetMaxVelocity() float32 {
 
 func (p *Platform) GetMaxOmega() float32 {
 	deltaV := p.GetMaxVelocity()
-	return deltaV * 4 / p.wheelbase
+	return deltaV * 2 / p.wheelbase
 }
 
 func (p *Platform) GetVelocity() (float32, float32) {
