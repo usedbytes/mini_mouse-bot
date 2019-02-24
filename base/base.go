@@ -153,6 +153,24 @@ func (p *Platform) ControlledMove(mm, vel float32) {
 	p.Motors.ControlledMove(revs, vel, revs, vel)
 }
 
+// FIXME: This doesn't really work, presumably due to wheel slippage
+// This paper looks like it would be useful: http://www.ijmmm.org/papers/077-A009.pdf
+func (p *Platform) ControlledArc(radius, tangential, angle float32) {
+	innerR, outerR := radius - (p.wheelbase / 2), radius + (p.wheelbase / 2)
+	innerMM, outerMM := innerR * angle, outerR * angle
+	w := tangential / radius
+	innerRPS, outerRPS := w * innerR / p.mmPerRev, w * outerR / p.mmPerRev
+
+	innerRevs := float32(math.Abs(float64(innerMM))) / p.mmPerRev
+	outerRevs := float32(math.Abs(float64(outerMM))) / p.mmPerRev
+
+	if angle > 0 {
+		p.Motors.ControlledMove(outerRevs, outerRPS, innerRevs, innerRPS)
+	} else {
+		p.Motors.ControlledMove(innerRevs, innerRPS, outerRevs, outerRPS)
+	}
+}
+
 func (p *Platform) Moving() bool {
 	return p.Motors.Moving()
 }
