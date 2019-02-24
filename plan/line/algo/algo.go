@@ -28,9 +28,6 @@ func findMinMaxRowwise(img *image.Gray) []image.Point {
 	return ret
 }
 
-// TODO: What fudge-factor do we need here?
-const fudge = 80
-
 /* FIXME: Out of sync with expandContrastAndThresh
 func expandContrast(img *image.Gray, minMax []image.Point) {
 	w, h := img.Bounds().Dx(), img.Bounds().Dy()
@@ -58,8 +55,11 @@ func expandContrastAndThresh(img *image.Gray, minMax []image.Point) {
 	for i, p := range minMax {
 		diff := p.X - p.Y
 		scale := float32(0.0)
-		if p.X - p.Y > fudge {
+		if diff > 0 {
 			scale = 255.0 / float32(diff)
+			if scale > 3.0 {
+				scale = 3.0
+			}
 		}
 
 		row := img.Pix[img.Stride * i : img.Stride * i + w]
