@@ -39,7 +39,7 @@ type Task struct {
 
 func (t *Task) Enter() {
 	t.platform.DisableCamera()
-	t.platform.SetCameraCrop(picamera.Rect(0.0, 0.3, 1.0, 1.0))
+	t.platform.SetCameraCrop(picamera.Rect(0.0, 0.0, 1.0, 1.0))
 	t.platform.SetCameraFormat(picamera.FORMAT_I420)
 	t.platform.Camera.SetOutSize(40, 80)
 	t.platform.EnableCamera()
@@ -138,7 +138,7 @@ func NewTask(m *model.Model, pl *base.Platform) *Task {
 		platform: pl,
 		mod: m,
 		heading: heading.NewTask(m, pl),
-		max: float32(0.51),
-		min: float32(0.25),
+		max: float32(0.49),
+		min: float32(0.44),
 	}
 }
