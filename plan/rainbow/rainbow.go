@@ -91,7 +91,7 @@ func (t *Task) tickPirouette(img image.Image) {
 	stripeH := h / 8
 	roi := image.Rect(0, (h / 2) - (stripeH / 2), w, (h / 2) + (stripeH / 2))
 	left, right, _ := cv.FindBoard(img, nil, roi)
-	c := img.At(int(((left + right) / 2) * float32(w)), h / 2)
+	c := img.At(int(((left + right) / 2) * float32(w)), h / 4)
 	t.colors = append(t.colors, c)
 
 	if len(t.colors) == 4 {
