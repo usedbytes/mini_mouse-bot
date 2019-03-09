@@ -24,6 +24,7 @@ func (t *Task) Enter() {
 	t.platform.SetVelocity(0, 0)
 	t.platform.SetServos(0.0, 0.0)
 	t.platform.EnableServos(true, true)
+	t.reverse = false
 }
 
 func (t *Task) Exit() {
