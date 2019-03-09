@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"math/rand"
 	"time"
 
 	"github.com/usedbytes/mini_mouse/bot/base"
@@ -33,6 +34,7 @@ const TaskName = "rainbow"
 
 type Task struct {
 	platform *base.Platform
+	mod *model.Model
 	heading *heading.Task
 	running bool
 	turning bool
@@ -47,6 +49,22 @@ type Task struct {
 	subState int
 }
 
+func (t *Task) reset() {
+	t.corners = t.corners[:0]
+	t.colors = make([]color.Color, 0, 4)
+
+	t.dir = 0.0
+	t.running = false
+	t.turning = false
+
+	t.state = Pirouette
+
+	t.mod.ResetOrientation()
+	t.platform.SetLEDColor(t.Color())
+
+	rand.Seed(time.Now().UnixNano())
+}
+
 func (t *Task) Enter() {
 	t.platform.DisableCamera()
 	t.platform.SetCameraCrop(picamera.Rect(0.0, 0.0, 1.0, 1.0))
@@ -54,11 +72,12 @@ func (t *Task) Enter() {
 	t.platform.Camera.SetOutSize(100, 100)
 	t.platform.EnableCamera()
 
-	t.dir = 0.0
+	t.platform.SetLEDColor(t.Color())
 	t.running = false
-	t.turning = false
-	t.colors = make([]color.Color, 0, 4)
-	t.state = Pirouette
+
+	if t.colors == nil {
+		t.reset()
+	}
 }
 
 func (t *Task) Exit() {
@@ -147,7 +166,10 @@ func (t *Task) tickPirouette(img image.Image) {
 			dir: float32(2 * minArg.First + 1) * math.Pi / 4,
 			c: t.colors[minArg.First],
 		}
+		//rand.Shuffle(len(ordered), func(i, j int) { ordered[i], ordered[j] = ordered[j], ordered[i] })
 		t.corners = ordered
+
+		t.platform.SetLEDColor(t.Color())
 
 		return
 	}
@@ -236,7 +258,9 @@ func (t *Task) tickGoTo(img image.Image) {
 		t.corner++
 		t.subState = 0
 		if t.corner >= 4 {
-			t.state = Approach
+			t.running = false
+			t.state = GoTo
+			t.corner = 0
 		}
 	}
 
@@ -256,6 +280,11 @@ func (t *Task) Tick(buttons input.ButtonState) {
 			t.platform.SetVelocity(0, 0)
 		}
 		t.running = !t.running
+	}
+
+	if buttons[input.Square] == input.Pressed {
+		buttons[input.Square] = input.None
+		t.reset()
 	}
 
 	if !t.running {
@@ -281,12 +310,16 @@ func (t *Task) Tick(buttons input.ButtonState) {
 }
 
 func (t *Task) Color() color.Color {
-	return color.NRGBA{ 0x00, 0x40, 0xff, 0x80 }
+	if t.corners != nil && len(t.corners) == 4 {
+		return color.NRGBA{ 0x00, 0xff, 0xff, 0x80 }
+	}
+	return color.NRGBA{ 0x00, 0x40, 0xa0, 0x80 }
 }
 
 func NewTask(m *model.Model, pl *base.Platform) *Task {
 	return &Task{
 		platform: pl,
+		mod: m,
 		heading: heading.NewTask(m, pl),
 		colors: make([]color.Color, 0, 4),
 	}
