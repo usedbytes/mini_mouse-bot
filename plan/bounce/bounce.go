@@ -98,8 +98,8 @@ func (t *Task) Tick(buttons input.ButtonState) {
 
 	if horz <= t.min {
 		if t.turn >= len(maze) {
-			t.platform.SetVelocity(0, 0)
-			t.running = false
+			t.platform.SetVelocity(200, 200)
+			//t.running = false
 			return
 		}
 		turn := maze[t.turn]
