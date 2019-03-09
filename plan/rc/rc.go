@@ -61,6 +61,9 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		if t.reverse {
 			speed = -speed
 		}
+		if speed < 0 {
+			w = -w
+		}
 		t.platform.SetArc(speed, w)
 	}
 	t.prevA = a
