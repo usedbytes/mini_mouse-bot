@@ -27,7 +27,36 @@ const (
 
 type Corner struct {
 	dir float32
+	coords image.Point
 	c color.Color
+}
+
+var coords []image.Point = []image.Point{
+	{  1,  1 },
+	{  1, -1 },
+	{ -1, -1 },
+	{ -1,  1 },
+}
+
+func NewCorner(idx int, c color.Color) Corner {
+	return Corner {
+		dir: float32(2 * idx + 1) * math.Pi / 4,
+		coords: coords[idx],
+		c: c,
+	}
+}
+
+func (c Corner) GoTo(to Corner) (float32, float32) {
+	fromCoords, toCoords := c.coords, to.coords
+	side := 900.0
+	//side := 10.0
+
+	dx := float64(toCoords.X - fromCoords.X) * side / 2
+	dy := float64(toCoords.Y - fromCoords.Y) * side / 2
+	heading := float64(math.Atan2(dx, dy))
+	distance := math.Sqrt(dx * dx + dy * dy)
+
+	return float32(heading), float32(distance)
 }
 
 const TaskName = "rainbow"
@@ -39,7 +68,9 @@ type Task struct {
 	running bool
 	turning bool
 	moving bool
+	fancy bool
 	dir float32
+	dist float32
 	lastTime time.Time
 
 	colors []color.Color
@@ -56,6 +87,7 @@ func (t *Task) reset() {
 	t.dir = 0.0
 	t.running = false
 	t.turning = false
+	t.fancy = false
 
 	t.state = Pirouette
 
@@ -150,22 +182,11 @@ func (t *Task) tickPirouette(img image.Image) {
 		}
 
 		ordered := make([]Corner, 4)
-		ordered[0] = Corner{
-			dir: float32(2 * maxCr.First + 1) * math.Pi / 4,
-			c: t.colors[maxCr.First],
-		}
-		ordered[1] = Corner{
-			dir: float32(2 * maxCb.First + 1) * math.Pi / 4,
-			c: t.colors[maxCb.First],
-		}
-		ordered[2] = Corner{
-			dir: float32(2 * minCb.First + 1) * math.Pi / 4,
-			c: t.colors[minCb.First],
-		}
-		ordered[3] = Corner{
-			dir: float32(2 * minArg.First + 1) * math.Pi / 4,
-			c: t.colors[minArg.First],
-		}
+		ordered[0] = NewCorner(maxCr.First, t.colors[maxCr.First])
+		ordered[1] = NewCorner(maxCb.First, t.colors[maxCb.First])
+		ordered[2] = NewCorner(minCb.First, t.colors[minCb.First])
+		ordered[3] = NewCorner(minArg.First, t.colors[minArg.First])
+
 		//rand.Shuffle(len(ordered), func(i, j int) { ordered[i], ordered[j] = ordered[j], ordered[i] })
 		t.corners = ordered
 
@@ -214,7 +235,21 @@ func (t *Task) tickConfirm(img image.Image) {
 	return
 }
 
-func (t *Task) tickGoTo(img image.Image) {
+func minimiseDir(current, next, dist float32) (float32, float32) {
+	dtheta := next - current
+	dtheta = heading.Normalise(dtheta)
+	if dtheta < -math.Pi / 2 {
+		return heading.Normalise(next + math.Pi), -dist
+	}
+
+	if dtheta > math.Pi / 2 {
+		return heading.Normalise(next - math.Pi), -dist
+	}
+
+	return next, dist
+}
+
+func (t *Task) tickGoToSimple(img image.Image) {
 	// Keep turning
 	if t.turning {
 		if !t.heading.OnCourse {
@@ -267,6 +302,66 @@ func (t *Task) tickGoTo(img image.Image) {
 	return
 }
 
+func (t *Task) tickGoToFancy(img image.Image) {
+	// Keep turning
+	if t.turning {
+		if !t.heading.OnCourse {
+			t.heading.Tick(nil)
+			return
+		}
+		t.turning = false
+	}
+
+	// Keep moving
+	if t.moving {
+		if t.platform.Moving() {
+			return
+		}
+		t.platform.SetVelocity(0, 0)
+		t.moving = false
+		return
+	}
+
+	switch t.subState {
+	case 0:
+		if t.corner == 0 {
+			t.dir = t.corners[0].dir
+			t.dist = 610
+			//t.dist = 5
+		} else {
+			dir, dist := t.corners[t.corner - 1].GoTo(t.corners[t.corner])
+			t.dir, t.dist = minimiseDir(t.dir, dir, dist)
+		}
+		t.platform.SetBoost(base.BoostNone)
+		t.heading.SetHeading(t.dir)
+		t.turning = true
+		t.heading.Tick(nil)
+		t.subState = 1
+	case 1:
+		t.platform.SetBoost(base.BoostFast)
+		t.platform.ControlledMove(t.dist, float32(math.Copysign(float64(t.platform.GetMaxVelocity()), float64(t.dist))))
+		t.moving = true
+		t.subState = 3
+	case 2:
+		if t.corner < 3 {
+			t.platform.SetBoost(base.BoostFast)
+			t.platform.ControlledMove(610, -t.platform.GetMaxVelocity())
+			t.moving = true
+		}
+		t.subState = 3
+	case 3:
+		t.corner++
+		t.subState = 0
+		if t.corner >= 4 {
+			t.running = false
+			t.state = GoTo
+			t.corner = 0
+		}
+	}
+
+	return
+}
+
 func (t *Task) Tick(buttons input.ButtonState) {
 	frame, frameTime := t.platform.GetFrame()
 	if frame == nil || frameTime == t.lastTime {
@@ -280,6 +375,12 @@ func (t *Task) Tick(buttons input.ButtonState) {
 			t.platform.SetVelocity(0, 0)
 		}
 		t.running = !t.running
+	}
+
+	if buttons[input.Options] == input.Pressed {
+		buttons[input.Options] = input.None
+		t.fancy = !t.fancy
+		t.platform.SetLEDColor(t.Color())
 	}
 
 	if buttons[input.Square] == input.Pressed {
@@ -300,20 +401,28 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	}
 
 	switch t.state {
-		case Pirouette:
-			t.tickPirouette(img)
-		case Confirm:
-			t.tickConfirm(img)
-		case GoTo:
-			t.tickGoTo(img)
+	case Pirouette:
+		t.tickPirouette(img)
+	case Confirm:
+		t.tickConfirm(img)
+	case GoTo:
+		if t.fancy {
+			t.tickGoToFancy(img)
+		} else {
+			t.tickGoToSimple(img)
+		}
 	}
 }
 
 func (t *Task) Color() color.Color {
-	if t.corners != nil && len(t.corners) == 4 {
-		return color.NRGBA{ 0x00, 0xff, 0xff, 0x80 }
+	red := uint8(0)
+	if t.fancy {
+		red = 0x40
 	}
-	return color.NRGBA{ 0x00, 0x40, 0xa0, 0x80 }
+	if t.corners != nil && len(t.corners) == 4 {
+		return color.NRGBA{ red, 0xff, 0xff, 0x80 }
+	}
+	return color.NRGBA{ red, 0x40, 0xa0, 0x80 }
 }
 
 func NewTask(m *model.Model, pl *base.Platform) *Task {
