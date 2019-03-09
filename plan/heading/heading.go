@@ -21,7 +21,7 @@ type Task struct {
 	maxRot, minRot float64
 }
 
-func normalise(rads float32) float32 {
+func Normalise(rads float32) float32 {
 	if rads > math.Pi || rads < -math.Pi {
 		rads = float32(math.Atan2(math.Sin(float64(rads)), math.Cos(float64(rads))))
 	}
@@ -47,7 +47,7 @@ func (t *Task) Tick(buttons input.ButtonState) {
 
 	_, theta := t.model.GetPose()
 
-	dTheta := float64(normalise(t.heading - theta))
+	dTheta := float64(Normalise(t.heading - theta))
 
 	val := 0.0
 	if math.Abs(dTheta) <= fine {
