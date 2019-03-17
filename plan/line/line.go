@@ -27,9 +27,9 @@ type Task struct {
 
 func (t *Task) Enter() {
 	t.platform.DisableCamera()
-	t.platform.SetCameraCrop(picamera.Rect(0.0, 0.5, 1.0, 1.0))
+	t.platform.SetCameraCrop(picamera.Rect(0.0, 0.6, 1.0, 1.0))
 	t.platform.SetCameraFormat(picamera.FORMAT_YV12)
-	t.platform.Camera.SetOutSize(16, 16)
+	t.platform.Camera.SetOutSize(32, 32)
 	t.platform.EnableCamera()
 	t.platform.SetBoost(base.BoostFast)
 
@@ -56,10 +56,6 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		t.running = !t.running
 	}
 
-	if !t.running {
-		return
-	}
-
 	grayFrame := frame.(*picamera.GrayFrame)
 	line := algo.FindLine(&grayFrame.Gray)
 
@@ -79,36 +75,58 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		}
 	}
 
-	if (nearest > h || furthest < 0) || (t.lost > 0 && nearest > h / 2) {
+	vel := float32(0)
+	omega := float32(0)
+
+	if (nearest > h || furthest < 0) || (t.lost > 0 && nearest > h / 2) || furthest == nearest {
 		fmt.Printf("Lost line! prev was %v\n", t.side)
 		t.lost++
 		if t.lost > t.search {
 			t.side = -t.side
 			t.search *= 2
 		}
-		t.platform.SetArc(0, float32(math.Copysign(5.0, float64(t.side))))
-		return
+		vel, omega = 0, float32(math.Copysign(float64(2.5), float64(t.side)))
 	} else {
 		t.lost = 0
 		t.search = 60
-	}
 
-	val := float32(0.0)
-	mid := int(math.Ceil(float64(furthest - nearest) / 2))
-	for i := mid; i < furthest; i++ {
-		if !math.IsNaN(float64(line[i])) {
-			val = line[i]
-			break
+		x1 := float32(furthest) / float32(h)
+		y1 := line[furthest]
+
+		x2 := float32(nearest) / float32(h)
+		y2 := line[nearest]
+
+		m := (y2 - y1) / (x2 - x1)
+		c := y2 - m * x2
+
+		//fmt.Printf("(%1.3f, %1.3f), (%2.3f, %1.3f) -> y = %2.3f * x + %2.3f\n", x1, y1, x2, y2, m, c);
+
+		if c > 0 || c < 0 {
+			t.side = c
 		}
+
+		if math.Abs(float64(m)) < 0.1 && math.Abs(float64(c)) < 0.1 {
+			vel = t.platform.GetMaxVelocity()
+
+			// Turn proportional to c, higher amplification than normal
+			omega = t.maxTurn * c * 1.5
+		} else {
+			// Slow proportional to m
+			reductor := float32(math.Min(0.95, math.Abs(float64(m))))
+			vel = t.maxSpeed * (1 - reductor)
+
+			// Turn proportional to c
+			omega = t.maxTurn * c
+		}
+
 	}
 
-	if val > 0 || val < 0 {
-		t.side = val
+	//fmt.Println(vel, omega)
+
+	if !t.running {
+		return
 	}
 
-	t.maxSpeed = t.platform.GetMaxVelocity() * 0.8
-	vel := float32(float64(t.maxSpeed) - math.Abs(float64(val)) * float64(t.maxSpeed))
-	omega := t.maxTurn * val
 	t.platform.SetArc(vel, omega)
 }
 
@@ -120,7 +138,7 @@ func NewTask(pl *base.Platform) *Task {
 	return &Task{
 		platform: pl,
 		search: 60,
-		maxSpeed: 300,
-		maxTurn: 10,
+		maxSpeed: 500,
+		maxTurn: 7,
 	}
 }
