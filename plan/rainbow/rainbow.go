@@ -87,7 +87,7 @@ func (t *Task) reset() {
 	t.dir = 0.0
 	t.running = false
 	t.turning = false
-	t.fancy = false
+	t.fancy = true
 
 	t.state = Pirouette
 
@@ -417,7 +417,7 @@ func (t *Task) Tick(buttons input.ButtonState) {
 func (t *Task) Color() color.Color {
 	red := uint8(0)
 	if t.fancy {
-		red = 0x40
+		red = 0x80
 	}
 	if t.corners != nil && len(t.corners) == 4 {
 		return color.NRGBA{ red, 0xff, 0xff, 0x80 }
@@ -431,5 +431,6 @@ func NewTask(m *model.Model, pl *base.Platform) *Task {
 		mod: m,
 		heading: heading.NewTask(m, pl),
 		colors: make([]color.Color, 0, 4),
+		fancy: true,
 	}
 }
