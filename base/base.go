@@ -253,6 +253,11 @@ func (p *Platform) Reconnect(recon func() bool) {
 	})
 }
 
+// FIXME: Broken encapsulation for music hacks.
+func (p *Platform) Dev() *dev.Dev {
+	return p.dev
+}
+
 func NewPlatform(/* Some config */) (*Platform, error) {
 	_, err := host.Init()
 	if err != nil {
