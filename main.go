@@ -16,13 +16,14 @@ import (
 	"github.com/usedbytes/mini_mouse/bot/base"
 	"github.com/usedbytes/mini_mouse/bot/model"
 	"github.com/usedbytes/mini_mouse/bot/plan"
-	"github.com/usedbytes/mini_mouse/bot/plan/cvdev"
+	_ "github.com/usedbytes/mini_mouse/bot/plan/cvdev"
 	"github.com/usedbytes/mini_mouse/bot/plan/rc"
 	"github.com/usedbytes/mini_mouse/bot/plan/line"
 	"github.com/usedbytes/mini_mouse/bot/plan/rainbow"
 	"github.com/usedbytes/mini_mouse/bot/plan/waypoint"
 	"github.com/usedbytes/mini_mouse/bot/plan/heading"
 	"github.com/usedbytes/mini_mouse/bot/plan/bounce"
+	"github.com/usedbytes/mini_mouse/bot/plan/music"
 	"github.com/usedbytes/picamera"
 )
 
@@ -179,13 +180,15 @@ func main() {
 	lineTask := line.NewTask(platform)
 	rainbowTask := rainbow.NewTask(mod, platform)
 
-	cvdevTask := cvdev.NewTask(ip, platform)
+	//cvdevTask := cvdev.NewTask(ip, platform)
+	musicTask := music.NewTask(ip, platform)
 
 	planner := plan.NewPlanner(platform)
 	planner.AddTask(rc.TaskName, rc.NewTask(ip, platform), menu.None)
 	planner.AddTask(line.TaskName, lineTask, menu.North)
 	planner.AddTask(rainbow.TaskName, rainbowTask, menu.East)
-	planner.AddTask(cvdev.TaskName, cvdevTask, menu.South)
+	//planner.AddTask(cvdev.TaskName, cvdevTask, menu.South)
+	planner.AddTask(music.TaskName, musicTask, menu.South)
 	planner.AddTask(bounce.TaskName, bounceTask, menu.West)
 	planner.SetTask(rc.TaskName)
 
