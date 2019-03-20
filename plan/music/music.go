@@ -4,7 +4,6 @@ package music
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
 	"time"
 	"image/color"
 
@@ -96,6 +95,7 @@ type Player struct {
 	End uint64
 	ch chan bool
 	dev *dev.Dev
+	first bool
 }
 
 func NewPlayer(f *File, d *dev.Dev) *Player {
@@ -105,6 +105,7 @@ func NewPlayer(f *File, d *dev.Dev) *Player {
 		Notes: make([]uint8, len(f.Tracks)),
 		ch: make(chan bool, 10),
 		dev: d,
+		first: true,
 	}
 
 	for _, t := range f.Tracks {
@@ -187,7 +188,6 @@ func (p *Player) PlayPause(play bool) {
 
 func (p *Player) PlayUntil(until time.Time) {
 	if p.Started.IsZero() {
-		log.Println("Starting")
 		p.Started = time.Now()
 	}
 	abs := until.Sub(p.Started)
@@ -224,6 +224,11 @@ func (p *Player) PlayUntil(until time.Time) {
 			}
 		}
 		//time.Sleep(p.File.TicksToDuration(uint32(next - p.Timestamp)))
+	}
+
+	if p.first {
+		p.PlayPause(true)
+		p.first = false
 	}
 }
 
@@ -318,7 +323,6 @@ func (t *Task) Enter() {
 
 	t.Player = NewPlayer(t.Files[t.fileIdx], t.d)
 	t.Player.Reset()
-	t.Player.PlayPause(true)
 
 	t.fileIdx++
 	if t.fileIdx >= len(t.Files) {

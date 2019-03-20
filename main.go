@@ -237,6 +237,11 @@ func main() {
 			}
 		}
 
+		err = platform.Update()
+		if err != nil {
+			log.Println(err.Error())
+		}
+
 		d := time.Now()
 		telem.SetTimings(a, b, c, d)
 	}
