@@ -34,6 +34,7 @@ type Task struct {
 	lastTime time.Time
 
 	max, min float32
+	count int
 	speedMultiplier float32
 	turn int
 }
@@ -99,6 +100,7 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		img = frame
 	}
 	horz := 1.0 - cv.FindHorizon(img)
+	//fmt.Println(horz)
 
 	if !t.running {
 		return
@@ -116,24 +118,31 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	}
 
 	if horz <= t.min {
-		if t.turn >= len(maze) {
-			t.platform.SetVelocity(200, 200)
-			//t.running = false
-			return
-		}
-		turn := maze[t.turn]
-
-		if turn == Left {
-			t.dir += float32(-math.Pi / 2)
+		t.count++
+		if t.count <= 5 {
+			t.heading.DriveHeading(20, t.dir)
+			t.heading.Tick(buttons)
 		} else {
-			t.dir += float32(math.Pi / 2)
-		}
-		t.platform.SetBoost(base.BoostNone)
-		t.heading.SetHeading(t.dir)
-		t.turning = true
+			if t.turn >= len(maze) {
+				t.platform.SetVelocity(200, 200)
+				t.running = false
+				return
+			}
+			turn := maze[t.turn]
 
-		t.turn++
+			if turn == Left {
+				t.dir += float32(-math.Pi / 2)
+			} else {
+				t.dir += float32(math.Pi / 2)
+			}
+			t.platform.SetBoost(base.BoostNone)
+			t.heading.SetHeading(t.dir)
+			t.turning = true
+
+			t.turn++
+		}
 	} else {
+		t.count = 0
 		if math.IsNaN(float64(horz)) || horz > t.max {
 			horz = t.max
 		}
@@ -146,7 +155,6 @@ func (t *Task) Tick(buttons input.ButtonState) {
 
 		t.heading.DriveHeading(speed, t.dir)
 		t.heading.Tick(buttons)
-		//t.platform.SetArc(t.platform.GetMaxVelocity() * horz * horz, 0)
 	}
 }
 
@@ -161,6 +169,7 @@ func NewTask(m *model.Model, pl *base.Platform) *Task {
 		heading: heading.NewTask(m, pl),
 		max: float32(0.50),
 		min: float32(0.44),
+		count: 0,
 		speedMultiplier: float32(1.5),
 	}
 }
