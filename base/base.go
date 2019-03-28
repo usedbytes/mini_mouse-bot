@@ -175,16 +175,20 @@ func (p *Platform) Moving() bool {
 	return p.Motors.Moving()
 }
 
-func (p *Platform) GetMaxVelocity() float32 {
+func (p *Platform) GetMaxBoostedVelocity(boost Boost) float32 {
 	max := p.Motors.GetMaxRPS()
 
-	if p.boost == BoostSlow {
+	if boost == BoostSlow {
 		max *= 0.3
-	} else if p.boost == BoostFast {
+	} else if boost == BoostFast {
 		max *= 2
 	}
 
 	return max * p.mmPerRev
+}
+
+func (p *Platform) GetMaxVelocity() float32 {
+	return p.GetMaxBoostedVelocity(p.boost)
 }
 
 func (p *Platform) GetMaxOmega() float32 {
