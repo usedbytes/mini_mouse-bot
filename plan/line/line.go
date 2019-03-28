@@ -23,6 +23,7 @@ type Task struct {
 	side float32
 	lost, search int
 	maxSpeed, maxTurn float32
+	speedMultiplier float32
 }
 
 func (t *Task) Enter() {
@@ -52,6 +53,22 @@ func (t *Task) Tick(buttons input.ButtonState) {
 	if buttons[input.Cross] == input.Pressed {
 		if t.running {
 			t.platform.SetVelocity(0, 0)
+		} else {
+			if buttons[input.Up] == input.Held {
+				buttons[input.Up] = input.None
+				t.speedMultiplier = 2.0
+			} else if buttons[input.Right] == input.Held {
+				buttons[input.Right] = input.None
+				t.speedMultiplier = 1.85
+			} else if buttons[input.Left] == input.Held {
+				buttons[input.Left] = input.None
+				t.speedMultiplier = 1.7
+			} else if buttons[input.Down] == input.Held {
+				buttons[input.Down] = input.None
+				t.speedMultiplier = 1.0
+			} else {
+				t.speedMultiplier = 1.5
+			}
 		}
 		t.running = !t.running
 	}
@@ -106,7 +123,7 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		}
 
 		if math.Abs(float64(m)) < 0.1 && math.Abs(float64(c)) < 0.1 {
-			vel = t.platform.GetMaxVelocity()
+			vel = t.platform.GetMaxBoostedVelocity(base.BoostNone) * t.speedMultiplier
 
 			// Turn proportional to c, higher amplification than normal
 			omega = t.maxTurn * c * 1.5
@@ -140,5 +157,6 @@ func NewTask(pl *base.Platform) *Task {
 		search: 60,
 		maxSpeed: 500,
 		maxTurn: 7,
+		speedMultiplier: float32(1.5),
 	}
 }
