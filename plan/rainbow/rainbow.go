@@ -32,10 +32,10 @@ type Corner struct {
 }
 
 var coords []image.Point = []image.Point{
-	{  1,  1 },
-	{  1, -1 },
-	{ -1, -1 },
-	{ -1,  1 },
+	{  500,  500 },
+	{  500, -500 },
+	{ -500, -500 },
+	{ -500,  500 },
 }
 
 func NewCorner(idx int, c color.Color) Corner {
@@ -48,11 +48,9 @@ func NewCorner(idx int, c color.Color) Corner {
 
 func (c Corner) GoTo(to Corner) (float32, float32) {
 	fromCoords, toCoords := c.coords, to.coords
-	side := 900.0
-	//side := 10.0
 
-	dx := float64(toCoords.X - fromCoords.X) * side / 2
-	dy := float64(toCoords.Y - fromCoords.Y) * side / 2
+	dx := float64(toCoords.X - fromCoords.X)
+	dy := float64(toCoords.Y - fromCoords.Y)
 	heading := float64(math.Atan2(dx, dy))
 	distance := math.Sqrt(dx * dx + dy * dy)
 
@@ -71,6 +69,7 @@ type Task struct {
 	fancy bool
 	dir float32
 	dist float32
+	speedMultiplier float32
 	lastTime time.Time
 
 	colors []color.Color
@@ -279,13 +278,13 @@ func (t *Task) tickGoToSimple(img image.Image) {
 		t.subState = 1
 	case 1:
 		t.platform.SetBoost(base.BoostFast)
-		t.platform.ControlledMove(610, t.platform.GetMaxVelocity())
+		t.platform.ControlledMove(610, t.platform.GetMaxBoostedVelocity(base.BoostNone) * t.speedMultiplier)
 		t.moving = true
 		t.subState = 2
 	case 2:
 		if t.corner < 3 {
 			t.platform.SetBoost(base.BoostFast)
-			t.platform.ControlledMove(610, -t.platform.GetMaxVelocity())
+			t.platform.ControlledMove(610, -t.platform.GetMaxBoostedVelocity(base.BoostNone) * t.speedMultiplier)
 			t.moving = true
 		}
 		t.subState = 3
@@ -295,6 +294,7 @@ func (t *Task) tickGoToSimple(img image.Image) {
 		if t.corner >= 4 {
 			t.running = false
 			t.state = GoTo
+			t.dir = 0.0
 			t.corner = 0
 		}
 	}
@@ -325,13 +325,16 @@ func (t *Task) tickGoToFancy(img image.Image) {
 	switch t.subState {
 	case 0:
 		if t.corner == 0 {
-			t.dir = t.corners[0].dir
-			t.dist = 610
-			//t.dist = 5
+			dir, dist := Corner{dir: 0, coords: image.Pt(0, 0)}.GoTo(t.corners[t.corner])
+			t.dir, t.dist = minimiseDir(t.dir, dir, dist)
 		} else {
 			dir, dist := t.corners[t.corner - 1].GoTo(t.corners[t.corner])
 			t.dir, t.dist = minimiseDir(t.dir, dir, dist)
 		}
+
+		// Subtract half the robot
+		t.dist -= float32(math.Copysign(65, float64(t.dist)))
+
 		t.platform.SetBoost(base.BoostNone)
 		t.heading.SetHeading(t.dir)
 		t.turning = true
@@ -339,15 +342,8 @@ func (t *Task) tickGoToFancy(img image.Image) {
 		t.subState = 1
 	case 1:
 		t.platform.SetBoost(base.BoostFast)
-		t.platform.ControlledMove(t.dist, float32(math.Copysign(float64(t.platform.GetMaxVelocity()), float64(t.dist))))
+		t.platform.ControlledMove(t.dist, float32(math.Copysign(float64(t.platform.GetMaxBoostedVelocity(base.BoostNone) * t.speedMultiplier), float64(t.dist))))
 		t.moving = true
-		t.subState = 3
-	case 2:
-		if t.corner < 3 {
-			t.platform.SetBoost(base.BoostFast)
-			t.platform.ControlledMove(610, -t.platform.GetMaxVelocity())
-			t.moving = true
-		}
 		t.subState = 3
 	case 3:
 		t.corner++
@@ -355,7 +351,9 @@ func (t *Task) tickGoToFancy(img image.Image) {
 		if t.corner >= 4 {
 			t.running = false
 			t.state = GoTo
+			t.dir = 0.0
 			t.corner = 0
+			t.platform.SetBoost(base.BoostNone)
 		}
 	}
 
@@ -373,6 +371,22 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		buttons[input.Cross] = input.None
 		if t.running {
 			t.platform.SetVelocity(0, 0)
+		} else {
+			if buttons[input.Up] == input.Held {
+				buttons[input.Up] = input.None
+				t.speedMultiplier = 2.0
+			} else if buttons[input.Right] == input.Held {
+				buttons[input.Right] = input.None
+				t.speedMultiplier = 1.85
+			} else if buttons[input.Left] == input.Held {
+				buttons[input.Left] = input.None
+				t.speedMultiplier = 1.7
+			} else if buttons[input.Down] == input.Held {
+				buttons[input.Down] = input.None
+				t.speedMultiplier = 1.5
+			} else {
+				t.speedMultiplier = 1.8
+			}
 		}
 		t.running = !t.running
 	}
@@ -432,5 +446,6 @@ func NewTask(m *model.Model, pl *base.Platform) *Task {
 		heading: heading.NewTask(m, pl),
 		colors: make([]color.Color, 0, 4),
 		fancy: true,
+		speedMultiplier: 1.8,
 	}
 }
