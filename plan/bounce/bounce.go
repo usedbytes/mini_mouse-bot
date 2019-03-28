@@ -159,7 +159,7 @@ func NewTask(m *model.Model, pl *base.Platform) *Task {
 		platform: pl,
 		mod: m,
 		heading: heading.NewTask(m, pl),
-		max: float32(0.49),
+		max: float32(0.50),
 		min: float32(0.44),
 		speedMultiplier: float32(1.5),
 	}
