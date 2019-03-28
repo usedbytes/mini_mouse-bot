@@ -34,6 +34,7 @@ type Task struct {
 	lastTime time.Time
 
 	max, min float32
+	speedMultiplier float32
 	turn int
 }
 
@@ -70,6 +71,22 @@ func (t *Task) Tick(buttons input.ButtonState) {
 		buttons[input.Cross] = input.None
 		if t.running {
 			t.platform.SetVelocity(0, 0)
+		} else {
+			if buttons[input.Up] == input.Held {
+				buttons[input.Up] = input.None
+				t.speedMultiplier = 2.0
+			} else if buttons[input.Right] == input.Held {
+				buttons[input.Right] = input.None
+				t.speedMultiplier = 1.85
+			} else if buttons[input.Left] == input.Held {
+				buttons[input.Left] = input.None
+				t.speedMultiplier = 1.7
+			} else if buttons[input.Down] == input.Held {
+				buttons[input.Down] = input.None
+				t.speedMultiplier = 1.0
+			} else {
+				t.speedMultiplier = 1.5
+			}
 		}
 		t.running = !t.running
 	}
@@ -93,6 +110,8 @@ func (t *Task) Tick(buttons input.ButtonState) {
 			return
 		}
 		t.turning = false
+		// Just enable us to reach higher speeds
+		// The actual speed is determined by t.speedMultiplier
 		t.platform.SetBoost(base.BoostFast)
 	}
 
@@ -121,8 +140,10 @@ func (t *Task) Tick(buttons input.ButtonState) {
 
 		t.platform.SetBoost(base.BoostFast)
 		slow := ((t.max - horz) / (t.max - t.min)) * 0.5
-		maxSpeed := t.platform.GetMaxVelocity()
+
+		maxSpeed := t.platform.GetMaxBoostedVelocity(base.BoostNone) * t.speedMultiplier
 		speed := maxSpeed - (slow * maxSpeed)
+
 		t.heading.DriveHeading(speed, t.dir)
 		t.heading.Tick(buttons)
 		//t.platform.SetArc(t.platform.GetMaxVelocity() * horz * horz, 0)
@@ -140,5 +161,6 @@ func NewTask(m *model.Model, pl *base.Platform) *Task {
 		heading: heading.NewTask(m, pl),
 		max: float32(0.49),
 		min: float32(0.44),
+		speedMultiplier: float32(1.5),
 	}
 }
