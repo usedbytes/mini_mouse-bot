@@ -154,6 +154,7 @@ func (p *Player) emit(note *Note) {
 
 func (p *Player) Reset() {
 	p.Started = time.Time{}
+	p.first = true
 
 	buf := new(bytes.Buffer)
 
