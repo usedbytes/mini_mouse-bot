@@ -7,9 +7,9 @@ import (
 	"math"
 	"time"
 
-	"github.com/usedbytes/mini_mouse/bot/base"
-	"github.com/usedbytes/mini_mouse/bot/interface/input"
-	"github.com/usedbytes/mini_mouse/bot/plan/line/algo"
+	"github.com/usedbytes/thunk-bot/base"
+	"github.com/usedbytes/thunk-bot/interface/input"
+	"github.com/usedbytes/thunk-bot/plan/line/algo"
 	"github.com/usedbytes/picamera"
 )
 

@@ -4,7 +4,7 @@ package model
 import (
 	"math"
 
-	"github.com/usedbytes/mini_mouse/bot/base"
+	"github.com/usedbytes/thunk-bot/base"
 )
 
 type Coord struct {

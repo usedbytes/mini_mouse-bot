@@ -5,9 +5,9 @@ import (
 	"image/color"
 	"fmt"
 
-	"github.com/usedbytes/mini_mouse/bot/base"
-	"github.com/usedbytes/mini_mouse/bot/interface/input"
-	"github.com/usedbytes/mini_mouse/bot/interface/menu"
+	"github.com/usedbytes/thunk-bot/base"
+	"github.com/usedbytes/thunk-bot/interface/input"
+	"github.com/usedbytes/thunk-bot/interface/menu"
 )
 
 type Task interface {

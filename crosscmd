@@ -1,0 +1,1 @@
+CC=arm-linux-gnueabihf-gcc GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=1 CGO_CFLAGS="--sysroot=$SYSROOT -I$SYSROOT/usr/include/arm-linux-gnueabihf -I$SYSROOT/opt/vc/include -L$SYSROOT/opt/vc/lib -Wl,-L$SYSROOT/lib/arm-linux-gnueabihf" CGO_LDFLAGS="-L$SYSROOT/lib/arm-linux-gnueabihf -L$SYSROOT/opt/vc/lib" go build -v -ldflags="-linkmode=external -extld=arm-linux-gnueabihf-gcc" .

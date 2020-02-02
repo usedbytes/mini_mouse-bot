@@ -14,7 +14,7 @@ import (
 
 	"github.com/usedbytes/linux-led"
 
-	"github.com/usedbytes/mini_mouse/bot/base"
+	"github.com/usedbytes/thunk-bot/base"
 )
 
 type Button int

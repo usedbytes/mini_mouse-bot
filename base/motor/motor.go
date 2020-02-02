@@ -7,7 +7,7 @@ import (
 	"math"
 
 	"github.com/usedbytes/bot_matrix/datalink"
-	"github.com/usedbytes/mini_mouse/bot/base/dev"
+	"github.com/usedbytes/thunk-bot/base/dev"
 )
 
 type motor struct {

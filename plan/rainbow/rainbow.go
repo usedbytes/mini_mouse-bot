@@ -9,10 +9,10 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/usedbytes/mini_mouse/bot/base"
-	"github.com/usedbytes/mini_mouse/bot/interface/input"
-	"github.com/usedbytes/mini_mouse/bot/model"
-	"github.com/usedbytes/mini_mouse/bot/plan/heading"
+	"github.com/usedbytes/thunk-bot/base"
+	"github.com/usedbytes/thunk-bot/interface/input"
+	"github.com/usedbytes/thunk-bot/model"
+	"github.com/usedbytes/thunk-bot/plan/heading"
 	"github.com/usedbytes/mini_mouse/cv"
 	"github.com/usedbytes/picamera"
 )

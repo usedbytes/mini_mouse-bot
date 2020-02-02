@@ -5,8 +5,8 @@ import (
 
 	"github.com/usedbytes/linux-led"
 
-	"github.com/usedbytes/mini_mouse/bot/base"
-	"github.com/usedbytes/mini_mouse/bot/interface/input"
+	"github.com/usedbytes/thunk-bot/base"
+	"github.com/usedbytes/thunk-bot/interface/input"
 )
 
 type Direction int

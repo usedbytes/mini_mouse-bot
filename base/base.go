@@ -16,9 +16,9 @@ import (
 	"github.com/usedbytes/bno055"
 	"github.com/usedbytes/bot_matrix/datalink/netconn"
 	"github.com/usedbytes/linux-led"
-	"github.com/usedbytes/mini_mouse/bot/base/dev"
-	"github.com/usedbytes/mini_mouse/bot/base/motor"
-	"github.com/usedbytes/mini_mouse/bot/base/servo"
+	"github.com/usedbytes/thunk-bot/base/dev"
+	"github.com/usedbytes/thunk-bot/base/motor"
+	"github.com/usedbytes/thunk-bot/base/servo"
 	"github.com/usedbytes/picamera"
 )
 

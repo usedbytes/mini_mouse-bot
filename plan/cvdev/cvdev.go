@@ -6,10 +6,10 @@ import (
 	"image/color"
 	"time"
 
-	"github.com/usedbytes/mini_mouse/bot/base"
-	"github.com/usedbytes/mini_mouse/bot/interface/input"
-	"github.com/usedbytes/mini_mouse/bot/plan"
-	"github.com/usedbytes/mini_mouse/bot/plan/rc"
+	"github.com/usedbytes/thunk-bot/base"
+	"github.com/usedbytes/thunk-bot/interface/input"
+	"github.com/usedbytes/thunk-bot/plan"
+	"github.com/usedbytes/thunk-bot/plan/rc"
 	"github.com/usedbytes/mini_mouse/cv"
 	"github.com/usedbytes/picamera"
 )

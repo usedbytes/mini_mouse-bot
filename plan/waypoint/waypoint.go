@@ -6,9 +6,9 @@ import (
 	"log"
 	"math"
 
-	"github.com/usedbytes/mini_mouse/bot/base"
-	"github.com/usedbytes/mini_mouse/bot/interface/input"
-	"github.com/usedbytes/mini_mouse/bot/model"
+	"github.com/usedbytes/thunk-bot/base"
+	"github.com/usedbytes/thunk-bot/interface/input"
+	"github.com/usedbytes/thunk-bot/model"
 )
 
 const TaskName = "waypoint"

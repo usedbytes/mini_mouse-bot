@@ -11,9 +11,9 @@ import (
 	"gitlab.com/gomidi/midi/mid"
 	"gitlab.com/gomidi/midi/smf"
 
-	"github.com/usedbytes/mini_mouse/bot/base"
-	"github.com/usedbytes/mini_mouse/bot/base/dev"
-	"github.com/usedbytes/mini_mouse/bot/interface/input"
+	"github.com/usedbytes/thunk-bot/base"
+	"github.com/usedbytes/thunk-bot/base/dev"
+	"github.com/usedbytes/thunk-bot/interface/input"
 	"github.com/usedbytes/bot_matrix/datalink"
 
 )
